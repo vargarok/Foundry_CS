@@ -12,13 +12,14 @@ class CWActorSheet extends ActorSheet {
   }
 
 async getData(options = {}) {
-  // 1) Start with the full context from Foundry
   const data = await super.getData(options);
 
-  // 2) Work with the existing system data; don't replace it
-  const sys = data.system ?? this.actor.system ?? {};
+  // ✅ Make sure the template always has `system`
+  data.system = this.actor.system;
 
-  // 3) Ensure health structure exists (fallbacks for older actors)
+  const sys = data.system;
+
+  // Health fallbacks (so boxes always render)
   sys.vitals ??= {};
   const h = (sys.vitals.health ??= {});
   if (!Array.isArray(h.labels) || h.labels.length !== 7) {
@@ -30,15 +31,14 @@ async getData(options = {}) {
   if (typeof h.max !== "number") h.max = 7;
   if (typeof h.damage !== "number") h.damage = 0;
 
-  // 4) (Optional) keep Initiative always in sync here too
+  // Keep Initiative in sync for display
   const dex = Number(sys.attributes?.dex ?? 0);
   const wit = Number(sys.attributes?.wit ?? 0);
   sys.vitals.initiative = dex + wit;
 
-  // 5) Expose a convenience array for the template (optional)
+  // Convenience for the HBS loop (optional)
   data.hLabels = h.labels;
 
-  // 6) Return the original context, augmented (do NOT replace it)
   return data;
 }
 
