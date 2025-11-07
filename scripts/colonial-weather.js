@@ -147,7 +147,7 @@ Hooks.once("init", () => {
   Handlebars.registerHelper("uppercase", s => String(s).toUpperCase());
   Handlebars.registerHelper("capitalize", s => String(s).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()));
   // pick(obj, "a","b","c") → subset (used to group skill lists neatly)
-  Handlelebars.registerHelper("pick", (obj, ...keys) => {
+  Handlebars.registerHelper("pick", (obj, ...keys) => { // FIXED: Was 'Handlelebars'
     const opts = keys.pop();
     const out = {};
     if (!obj) return out;
