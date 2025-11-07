@@ -136,16 +136,29 @@ async getData(options = {}) {
     this.actor.update({ "system.vitals.initiative": initiative }, { diff: false });
   }
   _updateWoundPenalty() {
-  const h = this.actor.system.vitals.health;
-  const dmg = Math.min(Math.max(Number(h?.damage || 0), 0), Number(h?.max || 7));
-  const penalties = Array.isArray(h?.penalties) ? h.penalties : [0,0,-1,-1,-2,-2,-5];
-  // Sum penalties up to the damage taken, excluding the incapacitated last box
-  const capped = Math.min(dmg, penalties.length - 1);
-  const pen = penalties.slice(0, capped).reduce((a,b) => a + b, 0);
-  this.actor.update({
-    "system.vitals.health.damage": dmg,
-    "system.vitals.wound_pen": pen
-  }, { diff: false });
+  const h = this.actor.system.vitals.health || {};
+  const dmg = Math.max(0, Math.min(Number(h.damage ?? 0), Number(h.max ?? 7)));
+
+  const penalties = Array.isArray(h.penalties)
+    ? h.penalties
+    : [0, 0, -1, -1, -2, -2, -5, -5];
+
+  // Worst-box rule: use the penalty at the current box,
+  // but cap at the last *penalized* box (Crippled) for math.
+  const lastPenalized = penalties.length - 2; // index 6 (Crippled)
+  const idxForPenalty = Math.min(dmg, lastPenalized);
+  const pen = penalties[idxForPenalty] ?? 0;
+
+  const incapacitated = dmg >= penalties.length - 1; // index 7
+
+  this.actor.update(
+    {
+      "system.vitals.health.damage": dmg,
+      "system.vitals.wound_pen": pen,
+      "system.vitals.health.incapacitated": incapacitated
+    },
+    { diff: false }
+  );
 }
 
 _applyDamage(delta) {
