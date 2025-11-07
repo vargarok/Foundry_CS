@@ -12,7 +12,6 @@
       "name": "Hampus Barck & assistant"
     }
   ],
-  "url": "https://example.com/colonial-weather",
   "manifest": "https://raw.githubusercontent.com/vargarok/Foundry_CS/main/system.json",
   "download": "https://github.com/vargarok/Foundry_CS/releases/download/release/colonial-weather-system.zip",
   "initiative": "dex + wit",
