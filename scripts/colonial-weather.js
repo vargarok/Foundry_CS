@@ -48,12 +48,16 @@ activateListeners(html) {
   const dex = Number(this.actor.system.attributes?.dex || 0);
   const wit = Number(this.actor.system.attributes?.wit || 0);
   const dice = Math.max(1, dex + wit);
-  const roll = new Roll(`${dice}d10`).roll({ async: false });
+
+  // Use evaluate (same as your standard roller)
+  const roll = new Roll(`${dice}d10`);
+  roll.evaluate({ async: false });
+
   roll.toMessage({
     speaker: ChatMessage.getSpeaker({ actor: this.actor }),
     flavor: `<b>Initiative</b> (DEX ${dex} + WIT ${wit} = ${dice}d10)`
   });
-  }
+}
 
   // Core roller: Attribute + Skill − Wound Penalty; successes on 7–10; 10-again if specialized
   async _rollStandard(attr, skill) {
