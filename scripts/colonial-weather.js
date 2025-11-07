@@ -16,13 +16,6 @@ class CWActorSheet extends ActorSheet {
     ctx.system = this.actor.system;
     return ctx;
   }
-  
-  render(force=false, options={}) {
-  super.render(force, options);
-  // Schedule after render to avoid the previous “locked UI” issue
-  setTimeout(() => this._updateWoundPenalty(), 0);
-  return this;
-}
 
   activateListeners(html) {
     super.activateListeners(html);
