@@ -11,11 +11,28 @@ class CWActorSheet extends ActorSheet {
     });
   }
 
-  getData(options) {
-    const ctx = super.getData(options);
-    ctx.system = this.actor.system;
-    return ctx;
+getData(options) {
+  const ctx = super.getData(options);
+  const sys = ctx.system ?? this.actor.system;
+
+  // Ensure health structure + labels exist for older actors
+  if (!sys.vitals) sys.vitals = {};
+  if (!sys.vitals.health) sys.vitals.health = {};
+  if (!Array.isArray(sys.vitals.health.labels) || sys.vitals.health.labels.length !== 7) {
+    sys.vitals.health.labels = ["-0", "-0", "-1", "-1", "-2", "-2", "X"];
   }
+  if (!Array.isArray(sys.vitals.health.penalties) || sys.vitals.health.penalties.length !== 7) {
+    sys.vitals.health.penalties = [0, 0, -1, -1, -2, -2, -5];
+  }
+  if (typeof sys.vitals.health.max !== "number") sys.vitals.health.max = 7;
+  if (typeof sys.vitals.health.damage !== "number") sys.vitals.health.damage = 0;
+
+  // Optional: expose a convenient array for the HBS
+  ctx.hLabels = sys.vitals.health.labels;
+
+  return ctx;
+}
+
 
   activateListeners(html) {
     super.activateListeners(html);

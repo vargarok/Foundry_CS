@@ -53,20 +53,20 @@
     <input type="number" name="system.vitals.initiative" value="{{system.vitals.initiative}}" readonly/>
   </div>
 
-  <h4>Health</h4>
-  <div class="cw-health">
-    {{#each system.vitals.health.labels as |lab idx|}}
-      <label class="cw-hbox">
-        <input
-          type="radio"
-          name="cw-health"
-          data-index="{{idx}}"
-          {{#if (lte idx ../system.vitals.health.damage)}}checked{{/if}}
-        />
-        <span class="cw-hlabel">{{lab}}</span>
-      </label>
-    {{/each}}
-  </div>
+<h4>Health</h4>
+<div class="cw-health">
+  {{#each hLabels as |lab idx|}}
+    <label class="cw-hbox">
+      <input type="radio" name="cw-health" data-index="{{idx}}"
+             {{#if (lte idx ../system.vitals.health.damage)}}checked{{/if}} />
+      <span class="cw-hlabel">{{lab}}</span>
+    </label>
+  {{/each}}
+</div>
+<div class="cw-health-controls">
+  <button type="button" class="cw-dmg-minus">Heal</button>
+  <button type="button" class="cw-dmg-plus">Damage</button>
+</div>
 
   <div class="cw-health-controls">
     <button type="button" class="cw-dmg-minus">Heal</button>
