@@ -8,9 +8,45 @@
   <nav class="sheet-tabs tabs" data-group="primary">
     <a class="item" data-tab="core">Core</a>
     <a class="item" data-tab="skills">Skills</a>
+    <a class="item" data-tab="backgrounds">Backgrounds</a>
+    <a class="item" data-tab="notes">Notes</a>
   </nav>
 
   <section class="sheet-body">
+    <div class="tab backgrounds" data-group="primary" data-tab="backgrounds">
+  <div class="grid-2col">
+    <section>
+      <h3>Backgrounds</h3>
+      {{#each system.backgrounds as |val key|}}
+        <div class="resource">
+          <label>{{capitalize key}}</label>
+          <input type="text" name="system.backgrounds.{{key}}" value="{{val}}"/>
+        </div>
+      {{/each}}
+    </section>
+    <section>
+      <h3>Allegiances</h3>
+      {{#each system.allegiances as |val key|}}
+        <div class="resource">
+          <label>{{capitalize key}}</label>
+          <input type="text" name="system.allegiances.{{key}}" value="{{val}}"/>
+        </div>
+      {{/each}}
+      <h3 style="margin-top:10px;">Cybernetics</h3>
+      <div class="resource">
+        <label>Immune Load</label>
+        <input type="number" name="system.cyber.immune_load" value="{{system.cyber.immune_load}}" min="0" max="20"/>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="tab notes" data-group="primary" data-tab="notes">
+  <div class="resource" style="flex-direction:column; align-items:stretch;">
+    <label>Notes</label>
+    <textarea name="system.notes" rows="12">{{system.notes}}</textarea>
+  </div>
+</div>
     <div class="tab core" data-group="primary" data-tab="core">
       <div class="grid-3col">
         <section>
