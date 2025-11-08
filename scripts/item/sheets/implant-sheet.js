@@ -14,6 +14,11 @@ export class CWImplantSheet extends ItemSheet {
     if (!Handlebars.helpers.join) {
       Handlebars.registerHelper("join", (arr, sep) => (Array.isArray(arr) ? arr.join(sep ?? ", ") : ""));
     }
+    // Normalize effects for the template: allow {0:{...}} shape to render as an array
+    const eff = data.item?.system?.effects;
+    if (!Array.isArray(eff)) {
+        data.item.system.effects = Array.isArray(eff) ? eff : Object.values(eff ?? []);
+    }
     return data;
   }
   activateListeners(html) {
@@ -22,24 +27,20 @@ export class CWImplantSheet extends ItemSheet {
     html.find(".add-effect").on("click", async () => {
   console.log("CW Add Effect clicked for", this.item.id, "type:", this.item.type);
 
-  // Initialize for legacy items that predate the schema
-  if (!Array.isArray(this.item.system.effects)) {
-    await this.item.update({ "system.effects": [] }, { render: false });
-  }
-
-  const index = Array.isArray(this.item.system.effects) ? this.item.system.effects.length : 0;
-  const newEff = {
+    // Build a clean array and append
+    const current = Array.isArray(this.item.system.effects)
+    ? foundry.utils.deepClone(this.item.system.effects)
+    : Object.values(this.item.system.effects ?? []);
+    const newEff = {
     label: "New Effect",
     when: { rollType: "", tagsCsv: "" },
     mods: [{ path: "dicePool", op: "add", value: 1 }]
   };
 
-  // Path write is safest for array append
-  const upd = await this.item.update({ [`system.effects.${index}`]: newEff }, { render: false });
+  current.push(newEff);
+  await this.item.update({ "system.effects": current }, { render: false });
   await this.item.sheet.render(true);
-
-  // Sanity log
-  console.log("CW effects after update:", foundry.utils.deepClone(this.item.system.effects));
+  console.log("CW effects after update:", this.item.system.effects);
 });
   }
 }
