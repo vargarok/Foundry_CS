@@ -32,24 +32,52 @@
     </div>
 
     <div class="tab" data-group="primary" data-tab="effects">
-      {{#each item.system.effects as |eff i|}}
-        <fieldset class="cw-effect">
-          <legend>{{eff.label}}</legend>
-          <div class="form-group">
-            <label>When:</label>
-            <input type="text" name="system.effects.{{i}}.when.tagsCsv" value="{{eff.when.tagsCsv}}">
-            <label>Roll Type:</label>
-            <input type="text" name="system.effects.{{i}}.when.rollType" value="{{eff.when.rollType}}">
+  {{#each item.system.effects as |eff i|}}
+    <fieldset class="cw-effect space-y-2">
+      <legend>
+        <input name="system.effects.{{i}}.label" value="{{eff.label}}" placeholder="Effect label" />
+        <button type="button" class="effect-remove" data-index="{{i}}" title="Remove effect">🗑️</button>
+      </legend>
+
+      <div class="grid-3">
+        <label>Tags (csv)</label>
+        <input name="system.effects.{{i}}.when.tagsCsv" value="{{eff.when.tagsCsv}}" placeholder="cold, survival"/>
+
+        <label>Roll Type</label>
+        <select name="system.effects.{{i}}.when.rollType">
+          <option value=""        {{#if (eq eff.when.rollType "")}}selected{{/if}}>(any)</option>
+          <option value="standard"{{#if (eq eff.when.rollType "standard")}}selected{{/if}}>standard</option>
+          <option value="initiative"{{#if (eq eff.when.rollType "initiative")}}selected{{/if}}>initiative</option>
+          <option value="save"    {{#if (eq eff.when.rollType "save")}}selected{{/if}}>save</option>
+        </select>
+      </div>
+
+      <div class="mods">
+        {{#each eff.mods as |m j|}}
+          <div class="mod-row grid-4">
+            <label>Path</label>
+            <select name="system.effects.{{i}}.mods.{{j}}.path">
+              <option value="dicePool"   {{#if (eq m.path "dicePool")}}selected{{/if}}>dicePool</option>
+              <option value="initiative" {{#if (eq m.path "initiative")}}selected{{/if}}>initiative</option>
+            </select>
+
+            <label>Op</label>
+            <select name="system.effects.{{i}}.mods.{{j}}.op">
+              <option value="add" {{#if (eq m.op "add")}}selected{{/if}}>add</option>
+            </select>
+
+            <label>Value</label>
+            <input type="number" name="system.effects.{{i}}.mods.{{j}}.value" value="{{m.value}}" step="1"/>
+
+            <button type="button" class="mod-remove" data-index="{{i}}" data-mod="{{j}}" title="Remove modifier">✖</button>
           </div>
-          <div class="form-group">
-            <label>Mods:</label>
-            <input type="text" name="system.effects.{{i}}.mods.0.path"  value="{{eff.mods.0.path}}"  size="10">
-            <input type="text" name="system.effects.{{i}}.mods.0.op"    value="{{eff.mods.0.op}}"    size="5">
-            <input type="number" name="system.effects.{{i}}.mods.0.value" value="{{eff.mods.0.value}}" size="3">
-          </div>
-        </fieldset>
-{{/each}}
-      <button type="button" class="add-effect">Add Effect</button>
-    </div>
+        {{/each}}
+        <button type="button" class="mod-add" data-index="{{i}}">+ Add Modifier</button>
+      </div>
+    </fieldset>
+  {{/each}}
+
+  <button type="button" class="add-effect">Add Effect</button>
+</div>
   </section>
 </form>
