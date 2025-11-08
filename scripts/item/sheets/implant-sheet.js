@@ -19,15 +19,17 @@ export class CWImplantSheet extends ItemSheet {
   activateListeners(html) {
     super.activateListeners(html);
     html.find(".add-effect").on("click", async () => {
-      const effects = Array.isArray(this.item.system.effects) ? this.item.system.effects : [];
-      effects.push({
-        when: { rollType: "", tagsCsv: "" },
-        mods: [{ path: "dicePool", op: "add", value: 1 }],
-        label: "New Effect"
-      });
-      await this.item.update({ "system.effects": effects });
-      this.render(true);
-    });
+  const list = Array.isArray(this.item.system.effects) ? this.item.system.effects : [];
+  const index = list.length;
+  const newEff = {
+    when: { rollType: "", tagsCsv: "" },
+    mods: [{ path: "dicePool", op: "add", value: 1 }],
+    label: "New Effect"
+  };
+  // write directly to the next array slot; Foundry will create the array if needed
+  await this.item.update({ [`system.effects.${index}`]: newEff });
+  this.render(true);
+});
   }
 }
 Items.registerSheet("colonial-weather", CWImplantSheet, { types: ["implant"], makeDefault: true });

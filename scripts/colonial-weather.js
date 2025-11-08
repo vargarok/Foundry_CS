@@ -1,5 +1,4 @@
 // systems/colonial-weather/scripts/colonial-weather.js
-import { collectRollMods } from "./rules/effects.js";
 class CWActorSheet extends ActorSheet {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
@@ -84,7 +83,7 @@ async getData(options = {}) {
 
     const roll = new Roll(`${dice}d10`);
     // FIXED: Added 'await' and '{async: true}' to actually perform the roll
-    await roll.evaluate({ async: true }); 
+    await roll.evaluate(); 
     const faces = roll.dice[0].results.map(r => r.result);
     const successes = faces.filter(n => n >= 7).length;
 
