@@ -101,15 +101,6 @@ async getData(options = {}) {
     const form = this.element;
     const attr = form.find("select[name='cw-attr']").val() || "dex";
     const skill = form.find("select[name='cw-skill']").val() || "athletics";
-    const ctx = { rollType: "standard", tags: new Set() };  // add tags as needed: new Set(["cold", "melee"])
-    const mods = collectRollMods(this.actor, ctx);
-
-    let dice = Math.max(1, aVal + sVal - Math.abs(wound));
-    dice += mods.dicePool;
-
-    const sourcesLine = mods.sources?.length ? `<br/><small>From: ${mods.sources.join(", ")}</small>` : "";
-    // include sourcesLine in your chat card flavor if you like
-
     return this._rollStandard(attr, skill);
   }
 
@@ -138,7 +129,11 @@ async getData(options = {}) {
     const dex = Number(this.element.find("input[name='system.attributes.dex']").val() || 0);
     const wit = Number(this.element.find("input[name='system.attributes.wit']").val() || 0);
 
-    const initiative = dex + wit;
+    let initiative = dex + wit;
+    try {
+      const mods = collectRollMods(this.actor, { rollType: "initiative", tags: new Set() });
+      initiative += Number(mods?.initiative || 0);
+     } catch (e) { console.warn(e); }
     
     // Write back to the actor’s system data
     // We use { diff: false } to prevent recursion on the 'change' listener
@@ -183,6 +178,14 @@ _applyDamage(delta) {
     const wound = Number(this.actor.system.vitals?.wound_pen ?? 0);
     const specialized = Boolean(this.actor.system.specializations?.[skill]);
     let dice = Math.max(0, aVal + sVal - Math.abs(wound));
+    try {
+      const ctx = { rollType: "standard", tags: new Set() }; // add tags like new Set(["cold"])
+      const mods = collectRollMods(this.actor, ctx);
+      dice += Number(mods?.dicePool || 0);
+      var _sourcesLine = (mods?.sources?.length ? `<br/><small>From: ${mods.sources.join(", ")}</small>` : "");
+    } catch (e) {
+      console.warn("Effects mod failed:", e);
+    }
 
     if (dice <= 0) {
       ui.notifications.warn("Dice pool is 0 or less; rolling 1 die.");
@@ -213,7 +216,8 @@ _applyDamage(delta) {
       flavor: `
         <div class="cw-chat">
           <h3>Standard Test</h3>
-          <p><b>Pool:</b> ${attr.toUpperCase()} (${aVal}) + ${skill} (${sVal}) − Wounds (${Math.abs(wound)}) = <b>${dice}</b> d10</p>
+          <p><b>Pool:</b> ${attr.toUpperCase()} (${aVal}) + ${skill.toUpperCase()} (${sVal}) − Wounds (${Math.abs(wound)}) = <b>${dice}</b> d10</p>
+          ${_sourcesLine || ""}
           <p><b>Faces:</b> ${faces.join(", ")} ${specialized ? "(10-again)" : ""}</p>
           <p><b>Successes (7–10):</b> ${successes}${botch ? " — <span class='botch'>BOTCH</span>" : ""}</p>
         </div>`

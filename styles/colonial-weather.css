@@ -126,3 +126,7 @@
 .cw .cw-hbox { display: flex; flex-direction: column; align-items: center; font-size: 0.8em; }
 .cw .cw-hbox input[type="radio"] { appearance: auto; width: 18px; height: 18px; }
 .cw .cw-health-controls { display: flex; gap: 8px; }
+.cw-item-sheet .sheet-header .header-fields h1 input {
+  width: 100%;
+  box-sizing: border-box;
+}

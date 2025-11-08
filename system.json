@@ -32,7 +32,6 @@
   "scripts": ["scripts/colonial-weather.js"],
   "packs": [],
   "esmodules": [
-    "scripts/colonial-weather.js",
     "scripts/rules/effects.js",
     "scripts/item/cw-item.js",
     "scripts/item/sheets/implant-sheet.js",
