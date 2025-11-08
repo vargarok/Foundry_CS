@@ -51,13 +51,23 @@
     }
   },
   "Item": {
-    "types": [
-      "equipment",
-      "enhancement",
-      "background",
-      "merit",
-      "flaw"
-    ],
-    "templates": {}
+    "types": ["implant", "drug", "equipment", "enhancement", "background", "merit", "flaw"],
+    "templates": {
+      "withEffects": {
+        "effects": []
+      },
+      "withOnUse": {
+        "onUse": []
+      }
+    },
+    "typesData": {
+      "implant": { "category": "cybernetic", "techLevel": 10, "legal": "legal", "cost": 0, "description": "", "effects": [] },
+      "drug":    { "duration": { "type": "turns", "value": 10 }, "cost": 0, "description": "", "onUse": [], "sideEffects": [] },
+      "equipment":    { "effects": [] },
+      "enhancement":  { "effects": [] },
+      "background":   { "effects": [] },
+      "merit":        { "effects": [] },
+      "flaw":         { "effects": [] }
+    }
   }
 }

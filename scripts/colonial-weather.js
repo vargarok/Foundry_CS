@@ -1,5 +1,5 @@
 // systems/colonial-weather/scripts/colonial-weather.js
-
+import { collectRollMods } from "./rules/effects.js";
 class CWActorSheet extends ActorSheet {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
@@ -101,6 +101,15 @@ async getData(options = {}) {
     const form = this.element;
     const attr = form.find("select[name='cw-attr']").val() || "dex";
     const skill = form.find("select[name='cw-skill']").val() || "athletics";
+    const ctx = { rollType: "standard", tags: new Set() };  // add tags as needed: new Set(["cold", "melee"])
+    const mods = collectRollMods(this.actor, ctx);
+
+    let dice = Math.max(1, aVal + sVal - Math.abs(wound));
+    dice += mods.dicePool;
+
+    const sourcesLine = mods.sources?.length ? `<br/><small>From: ${mods.sources.join(", ")}</small>` : "";
+    // include sourcesLine in your chat card flavor if you like
+
     return this._rollStandard(attr, skill);
   }
 
@@ -108,7 +117,9 @@ async getData(options = {}) {
     ev.preventDefault();
     const dex = Number(this.actor.system.attributes?.dex || 0);
     const wit = Number(this.actor.system.attributes?.wit || 0);
-    const dice = Math.max(1, dex + wit);
+    const ctx = { rollType: "initiative", tags: new Set() };
+    const mods = collectRollMods(this.actor, ctx);
+    const dice = Math.max(1, dex + wit - Math.abs(wound)) + mods.dicePool;
 
     const roll = new Roll(`${dice}d10`);
     // FIXED: Added 'await' and '{async: true}' to actually perform the roll

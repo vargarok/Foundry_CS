@@ -1,0 +1,55 @@
+<form class="cw cw-item-sheet" autocomplete="off">
+  <header class="sheet-header flexrow">
+    <img class="profile" src="{{item.img}}" data-edit="img"/>
+    <div class="header-fields">
+      <h1><input name="name" type="text" value="{{item.name}}" placeholder="Name"/></h1>
+      <div class="grid-3">
+        <label>Category</label>
+        <select name="system.category">
+          {{#each categories as |c|}}<option {{#if (eq ../system.category c)}}selected{{/if}}>{{c}}</option>{{/each}}
+        </select>
+        <label>TL</label><input name="system.techLevel" type="number" value="{{system.techLevel}}"/>
+        <label>Legality</label>
+        <select name="system.legal">
+          {{#each legality as |l|}}<option {{#if (eq ../system.legal l)}}selected{{/if}}>{{l}}</option>{{/each}}
+        </select>
+      </div>
+      <div class="grid-2">
+        <label>Cost</label><input name="system.cost" type="number" value="{{system.cost}}"/>
+        <label>Notes</label><input name="system.description" type="text" value="{{system.description}}"/>
+      </div>
+    </div>
+  </header>
+
+  <section class="sheet-body">
+    <nav class="tabs" data-group="primary">
+      <a class="item" data-tab="details">Details</a>
+      <a class="item" data-tab="effects">Effects</a>
+    </nav>
+
+    <div class="tab" data-group="primary" data-tab="details">
+      <textarea name="system.description" rows="6" placeholder="Description...">{{system.description}}</textarea>
+    </div>
+
+    <div class="tab" data-group="primary" data-tab="effects">
+      {{#each system.effects as |eff i|}}
+        <fieldset class="effect-row">
+          <legend>{{eff.label}}</legend>
+          <div class="grid-3">
+            <label>Roll Type</label>
+            <input name="system.effects.{{i}}.when.rollType" value="{{eff.when.rollType}}"/>
+            <label>Tags (csv)</label>
+            <input name="system.effects.{{i}}.when.tagsCsv" value="{{join eff.when.tags ', '}}"/>
+            <label>Label</label>
+            <input name="system.effects.{{i}}.label" value="{{eff.label}}"/>
+          </div>
+          <div>
+            <label>Mods JSON</label>
+            <textarea name="system.effects.{{i}}.mods" rows="3">{{json eff.mods}}</textarea>
+          </div>
+        </fieldset>
+      {{/each}}
+      <button type="button" class="add-effect">Add Effect</button>
+    </div>
+  </section>
+</form>

@@ -2,10 +2,19 @@
   "id": "colonial-weather",
   "title": "Colonial Weather (Storyteller Sci\u2011Fi)",
   "description": "A lightweight Storyteller-style d10 dice-pool system scaffold for sci\u2011fi space opera campaigns.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "compatibility": {
     "minimum": "11",
     "verified": "13"
+  },
+  "system": {
+    "templates": ["template.json"]
+  },
+  "items": {
+    "types": ["base", "implant", "drug"],
+    "templates": {
+      "base": "templates/items/base.hbs"
+    }
   },
   "authors": [
     {
@@ -20,9 +29,14 @@
     "distance": 1,
     "units": "m"
   },
+  "scripts": ["src/cw.js"],
   "packs": [],
   "esmodules": [
-    "scripts/colonial-weather.js"
+    "scripts/colonial-weather.js",
+    "scripts/rules/effects.js",
+    "scripts/item/cw-item.js",
+    "scripts/item/sheets/implant-sheet.js",
+    "scripts/item/sheets/drug-sheet.js"
   ],
   "styles": [
     "styles/colonial-weather.css"
