@@ -108,6 +108,7 @@ async getData(options = {}) {
     ev.preventDefault();
     const dex = Number(this.actor.system.attributes?.dex || 0);
     const wit = Number(this.actor.system.attributes?.wit || 0);
+    const wound = Number(this.actor.system.vitals?.wound_pen || 0);
     const ctx = { rollType: "initiative", tags: new Set() };
     const mods = collectRollMods(this.actor, ctx);
     const dice = Math.max(1, dex + wit - Math.abs(wound)) + mods.dicePool;
@@ -129,7 +130,7 @@ async getData(options = {}) {
     const dex = Number(this.element.find("input[name='system.attributes.dex']").val() || 0);
     const wit = Number(this.element.find("input[name='system.attributes.wit']").val() || 0);
 
-    let initiative = dex + wit;
+    let initiative = Math.max(1, dex + wit - Math.abs(wound));
     try {
       const mods = collectRollMods(this.actor, { rollType: "initiative", tags: new Set() });
       initiative += Number(mods?.initiative || 0);
