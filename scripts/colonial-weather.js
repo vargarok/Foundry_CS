@@ -109,16 +109,15 @@ async getData(options = {}) {
     const wit = Number(this.actor.system.attributes?.wit || 0);
     const wound = Number(this.actor.system.vitals?.wound_pen || 0);
     const ctx = { rollType: "initiative", tags: new Set() };
-    const mods = collectRollMods(this.actor, ctx);
-    const dice = Math.max(1, dex + wit - Math.abs(wound)) + mods.dicePool;
+    const mods = (globalThis.CWEffects?.collectRollMods?.(this.actor, ctx)) || { dicePool: 0, initiative: 0 };
+    const dice = Math.max(1, dex + wit - Math.abs(wound)) + Number(mods.dicePool || 0);
 
     const roll = new Roll(`${dice}d10`);
-    // FIXED: Added 'await' and '{async: true}' to actually perform the roll
-    await roll.evaluate({ async: true });
+    await roll.evaluate();
 
     roll.toMessage({
       speaker: ChatMessage.getSpeaker({ actor: this.actor }),
-      flavor: `<b>Initiative</b> (DEX ${dex} + WIT ${wit} = ${dice}d10)`
+      flavor: `<b>Initiative</b> (DEX ${dex} + WIT ${wit} − Wounds ${Math.abs(wound)} = ${dice}d10)`
     });
   }
 
@@ -128,10 +127,11 @@ async getData(options = {}) {
     // We use 'this.element' which is the jQuery-wrapped form.
     const dex = Number(this.element.find("input[name='system.attributes.dex']").val() || 0);
     const wit = Number(this.element.find("input[name='system.attributes.wit']").val() || 0);
+    const wound = Number(this.actor.system.vitals?.wound_pen || 0);
 
     let initiative = Math.max(1, dex + wit - Math.abs(wound));
     try {
-      const mods = collectRollMods(this.actor, { rollType: "initiative", tags: new Set() });
+      const mods = (globalThis.CWEffects?.collectRollMods?.(this.actor, { rollType: "initiative", tags: new Set() })) || {};
       initiative += Number(mods?.initiative || 0);
      } catch (e) { console.warn(e); }
     

@@ -30,3 +30,4 @@ export function collectRollMods(actor, context) {
   }
   return out;
 }
+globalThis.CWEffects = { collectRollMods };

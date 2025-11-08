@@ -19,8 +19,10 @@ export class CWImplantSheet extends ItemSheet {
   activateListeners(html) {
     super.activateListeners(html);
     html.find(".add-effect").on("click", async () => {
-  const list = Array.isArray(this.item.system.effects) ? this.item.system.effects : [];
-  const index = list.length;
+  if (!Array.isArray(this.item.system.effects)) {
+    await this.item.update({ "system.effects": [] }, { render: false });
+  }
+  const index = this.item.system.effects.length;
   const newEff = {
     when: { rollType: "", tagsCsv: "" },
     mods: [{ path: "dicePool", op: "add", value: 1 }],
