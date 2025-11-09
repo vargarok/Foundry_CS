@@ -4,14 +4,22 @@
   "description": "A lightweight Storyteller-style d10 dice-pool system scaffold for sci‑fi space opera campaigns.",
   "version": "0.0.3",
   "compatibility": {
-    "minimum": "11",
+    "minimum": "12",
     "verified": "13"
   },
-  "Actor": {
-    "types": ["character"]
-  },
-  "Item": {
-    "types": ["base", "implant", "drug", "merit", "flaw", "background", "enhancement"]
+  "documentTypes": {
+    "Actor": {
+      "character": {}
+    },
+    "Item": {
+      "base": {},
+      "implant": {},
+      "drug": {},
+      "merit": {},
+      "flaw": {},
+      "background": {},
+      "enhancement": {}
+    }
   },
   "esmodules": [
     "scripts/colonial-weather.js",
