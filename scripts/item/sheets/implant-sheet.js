@@ -20,6 +20,7 @@ export class CWImplantSheet extends foundry.appv1.sheets.ItemSheet {
   /** Handlebars data */
   async getData(opts) {
     const data = await super.getData(opts);
+    data.system = this.item.system;
 
     // DO NOT rebuild arrays with Object.values on every render.
     // Clone what exists; expose a separate "effectsArray" for the template.
