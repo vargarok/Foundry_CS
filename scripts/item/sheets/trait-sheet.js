@@ -1,116 +1,161 @@
-const TEMPLATE = "systems/colonial-weather/templates/items/trait-sheet.hbs";
+// scripts/item/sheets/trait-sheet.js
+
+// --- config ---------------------------------------------------------------
+
+const SYSTEM_ID = "YOUR_SYSTEM_ID"; // e.g., "colonial-weather"
+
+// Optionally map different item types to different templates.
+// If you only have one template, point all of them to the same file.
+const SHEET_TEMPLATES = {
+  trait:        `systems/${SYSTEM_ID}/templates/items/trait-sheet.hbs`,
+  merit:        `systems/${SYSTEM_ID}/templates/items/trait-sheet.hbs`,
+  flaw:         `systems/${SYSTEM_ID}/templates/items/trait-sheet.hbs`,
+  background:   `systems/${SYSTEM_ID}/templates/items/trait-sheet.hbs`,
+  enhancement:  `systems/${SYSTEM_ID}/templates/items/trait-sheet.hbs`,
+};
+
+// --- helpers --------------------------------------------------------------
+
+function safeArray(v) {
+  return Array.isArray(v) ? v : (v != null ? [v] : []);
+}
+
+// Deep clone a value (small wrapper for readability)
+function clone(v) {
+  return foundry.utils.deepClone(v);
+}
+
+// --- sheet class ----------------------------------------------------------
 
 export class CWTraitSheet extends foundry.appv1.sheets.ItemSheet {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ["cw", "sheet", "item"],
-      width: 550, height: 500, template: TEMPLATE,
+      classes: ["cw", "sheet", "item", "cw-trait"],
+      width: 560,
+      height: 600,
       tabs: [{ navSelector: ".tabs", contentSelector: ".sheet-body", initial: "details" }],
       submitOnChange: false,
       closeOnSubmit: false
     });
   }
 
-  getData(opts) {
-    const data = super.getData(opts);
-    if (!Handlebars.helpers.eq) Handlebars.registerHelper("eq", (a, b) => a === b);
-    // Always render as a clean array
-    data.effectsArray = this._getEffectsArray();
+  /** Use a template per item type (or one shared template). */
+  get template() {
+    const t = SHEET_TEMPLATES[this.item.type];
+    return t ?? SHEET_TEMPLATES.trait;
+  }
+
+  /** Supply data to Handlebars without rebuilding arrays each render. */
+  getData(options) {
+    const data = super.getData(options);
+
+    const sys = data.system ?? {};
+    const effects = Array.isArray(sys.effects) ? clone(sys.effects) : [];
+
+    // Normalise nested arrays but keep order & identity stable
+    for (const eff of effects) {
+      if (!eff) continue;
+      eff.mods = Array.isArray(eff.mods) ? eff.mods : safeArray(eff.mods);
+    }
+
+    data.effectsArray = effects;
+
+    // Example selects (adapt as needed by your template)
+    data.rollTypes = ["(any)", "initiative", "attack", "defense", "skill"];
+
     return data;
   }
 
   activateListeners(html) {
     super.activateListeners(html);
 
-    // Universal handler for ALL inputs.
-    // We defer to a heavy-duty save function that cleans up the data structure every time.
-    html.find("input, select, textarea").on("change", async (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        await this._proccessForm(html);
-    });
+    // Add / remove whole effect blocks
+    html.on("click", ".add-effect", this._onAddEffect.bind(this));
+    html.on("click", ".effect-remove", this._onRemoveEffect.bind(this));
 
-    html.find(".add-effect").on("click", async (ev) => {
-      ev.preventDefault();
-      const effects = this._getEffectsArray();
-      effects.push({
-        label: "New Effect",
-        when: { rollType: "", tagsCsv: "" },
-        mods: [{ path: "dicePool", op: "add", value: 1 }]
-      });
-      await this.item.update({ "system.effects": effects });
-    });
+    // Add / remove individual modifiers inside an effect
+    html.on("click", ".mod-add", this._onAddMod.bind(this));
+    html.on("click", ".mod-remove", this._onRemoveMod.bind(this));
 
-    html.find(".effect-remove").on("click", async (ev) => {
-      ev.preventDefault();
-      const idx = Number(ev.currentTarget.dataset.index);
-      const effects = this._getEffectsArray();
-      effects.splice(idx, 1);
-      await this.item.update({ "system.effects": effects });
-    });
-
-    html.find(".mod-add").on("click", async (ev) => {
-      ev.preventDefault();
-      const idx = Number(ev.currentTarget.dataset.index);
-      const effects = this._getEffectsArray();
-      // Ensure the target effect exists before trying to add to it
-      if (effects[idx]) {
-         if (!effects[idx].mods) effects[idx].mods = [];
-         effects[idx].mods.push({ path: "dicePool", op: "add", value: 1 });
-         await this.item.update({ "system.effects": effects });
-      }
-    });
-
-    html.find(".mod-remove").on("click", async (ev) => {
-      ev.preventDefault();
-      const i = Number(ev.currentTarget.dataset.index);
-      const j = Number(ev.currentTarget.dataset.mod);
-      const effects = this._getEffectsArray();
-      // Safe Removal
-      if (effects[i]?.mods && effects[i].mods[j]) {
-          effects[i].mods.splice(j, 1);
-          await this.item.update({ "system.effects": effects });
-      }
-    });
+    // Persist changes in any input/select under system.effects.* without
+    // rebuilding the rest of the item data.
+    html.on(
+      "change",
+      "input[name^='system.effects'], select[name^='system.effects'], textarea[name^='system.effects']",
+      async () => { await this._saveEffectsFromForm(html); }
+    );
   }
 
-  _getEffectsArray() {
-    // Force whatever is in the data into a real Array
-    const sys = this.item.toObject().system;
-    let eff = sys.effects || [];
-    if (!Array.isArray(eff)) eff = Object.values(eff);
-    
-    // Deep clean: ensure every effect and its mods are real arrays
-    return eff.map(e => {
-       if (!e) return { when: {}, mods: [] }; // fallback for empty slots
-       if (!e.mods || !Array.isArray(e.mods)) e.mods = Object.values(e.mods || {});
-       return e;
-    });
+  // --- data writes --------------------------------------------------------
+
+  /** Read only the effects subtree from the form and write it back. */
+  async _saveEffectsFromForm(html) {
+    const form = html[0];
+    const expanded = foundry.utils.expandObject(foundry.utils.formToObject(form));
+    const incoming = expanded?.system?.effects ?? [];
+
+    for (const eff of incoming) {
+      if (!eff) continue;
+      eff.mods = Array.isArray(eff.mods) ? eff.mods : safeArray(eff.mods);
+    }
+
+    await this.item.update({ "system.effects": incoming });
   }
 
-  // The "Heavy Duty" save function that fixes the data structure on every edit
-  async _proccessForm(html) {
-      const form = html[0].closest("form");
-      // V13 compatibility for FormDataExtended
-      const FDE = foundry.applications?.ux?.FormDataExtended || FormDataExtended;
-      const formData = new FDE(form).object;
-      
-      // Expand flat form data (system.effects.0.label) into a deep object
-      const data = foundry.utils.expandObject(formData);
+  async _onAddEffect(event) {
+    event.preventDefault();
+    const current = Array.isArray(this.item.system.effects) ? clone(this.item.system.effects) : [];
+    current.push({
+      label: "",
+      tags: "",
+      rollType: "(any)",
+      mods: []
+    });
+    await this.item.update({ "system.effects": current });
+  }
 
-      // CRITICAL STEP: Force the expanded object back into real Arrays before saving
-      if (data.system?.effects && !Array.isArray(data.system.effects)) {
-          data.system.effects = Object.values(data.system.effects);
-      }
-      // Do the same for nested mods arrays
-      if (Array.isArray(data.system?.effects)) {
-          data.system.effects.forEach(eff => {
-              if (eff.mods && !Array.isArray(eff.mods)) {
-                  eff.mods = Object.values(eff.mods);
-              }
-          });
-      }
+  async _onRemoveEffect(event) {
+    event.preventDefault();
+    const idx = Number(event.currentTarget.dataset.index);
+    const current = Array.isArray(this.item.system.effects) ? clone(this.item.system.effects) : [];
+    if (idx >= 0 && idx < current.length) current.splice(idx, 1);
+    await this.item.update({ "system.effects": current });
+  }
 
-      await this.item.update(data);
+  async _onAddMod(event) {
+    event.preventDefault();
+    const effIndex = Number(event.currentTarget.dataset.index);
+    const current = Array.isArray(this.item.system.effects) ? clone(this.item.system.effects) : [];
+
+    current[effIndex] ??= { label: "", tags: "", rollType: "(any)", mods: [] };
+    current[effIndex].mods ??= [];
+    current[effIndex].mods.push({
+      path: "dicePool", // adapt to your schema
+      op: "add",
+      value: 0
+    });
+
+    await this.item.update({ "system.effects": current });
+  }
+
+  async _onRemoveMod(event) {
+    event.preventDefault();
+    const effIndex = Number(event.currentTarget.dataset.eff);
+    const modIndex = Number(event.currentTarget.dataset.mod);
+    const current = Array.isArray(this.item.system.effects) ? clone(this.item.system.effects) : [];
+
+    if (current[effIndex]?.mods && modIndex >= 0 && modIndex < current[effIndex].mods.length) {
+      current[effIndex].mods.splice(modIndex, 1);
+      await this.item.update({ "system.effects": current });
+    }
   }
 }
+
+// --- registration ---------------------------------------------------------
+
+// Register this sheet for all the "trait-like" types.
+// Adjust the list to match your system's actual item types.
+foundry.documents.collections.Items.registerSheet(SYSTEM_ID, CWTraitSheet, {
+  types: ["trait", "merit", "flaw", "background", "enhancement"],
+  makeDefault: true
+});
