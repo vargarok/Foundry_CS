@@ -43,7 +43,6 @@ export class CWImplantSheet extends foundry.appv1.sheets.ItemSheet {
 
   activateListeners(html) {
     super.activateListeners(html);
-    // 'html' is already a jQuery object in appv1 sheets, no need for $(html)
 
     // Add / Remove Effect (Use direct binding like the WOD20 sheet)
     html.find(".add-effect").on("click", this._onAddEffect.bind(this));
@@ -78,6 +77,7 @@ export class CWImplantSheet extends foundry.appv1.sheets.ItemSheet {
     const current = Array.isArray(this.item.system.effects) ? foundry.utils.deepClone(this.item.system.effects) : [];
     current.push({ label: "", tags: "", rollType: "(any)", mods: [] });
     await this.item.update({ "system.effects": current });
+    this.render(); // <-- ADD THIS LINE
   }
 
   async _onRemoveEffect(ev) {
@@ -86,6 +86,7 @@ export class CWImplantSheet extends foundry.appv1.sheets.ItemSheet {
     const current = Array.isArray(this.item.system.effects) ? foundry.utils.deepClone(this.item.system.effects) : [];
     if (idx >= 0 && idx < current.length) current.splice(idx, 1);
     await this.item.update({ "system.effects": current });
+    this.render(); // <-- ADD THIS LINE
   }
 
   async _onAddMod(ev) {
@@ -96,6 +97,7 @@ export class CWImplantSheet extends foundry.appv1.sheets.ItemSheet {
     current[effIndex].mods ??= [];
     current[effIndex].mods.push({ path: "dicePool", op: "add", value: 0 });
     await this.item.update({ "system.effects": current });
+    this.render(); // <-- ADD THIS LINE
   }
 
   async _onRemoveMod(ev) {
@@ -106,6 +108,7 @@ export class CWImplantSheet extends foundry.appv1.sheets.ItemSheet {
     if (current[effIndex]?.mods && modIndex >= 0 && modIndex < current[effIndex].mods.length) {
       current[effIndex].mods.splice(modIndex, 1);
       await this.item.update({ "system.effects": current });
+      this.render(); // <-- ADD THIS LINE
     }
   }
 }
