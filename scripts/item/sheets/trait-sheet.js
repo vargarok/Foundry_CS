@@ -102,10 +102,13 @@ export class CWTraitSheet extends foundry.appv1.sheets.ItemSheet {
   async _onAddEffect(event) {
     event.preventDefault();
     const current = Array.isArray(this.item.system.effects) ? clone(this.item.system.effects) : [];
+    // Create the correct nested structure matching trait-sheet.hbs
     current.push({
-      label: "",
-      tags: "",
-      rollType: "(any)",
+      label: "New Effect",
+      when: {
+        tagsCsv: "",
+        rollType: "" // Corresponds to the "(any)" option with value=""
+      },
       mods: []
     });
     await this.item.update({ "system.effects": current });
@@ -124,7 +127,16 @@ export class CWTraitSheet extends foundry.appv1.sheets.ItemSheet {
     const effIndex = Number(event.currentTarget.dataset.index);
     const current = Array.isArray(this.item.system.effects) ? clone(this.item.system.effects) : [];
 
-    current[effIndex] ??= { label: "", tags: "", rollType: "(any)", mods: [] };
+    // Also fix the default structure here, in case an effect has no mods
+    current[effIndex] ??= {
+      label: "New Effect",
+      when: {
+        tagsCsv: "",
+        rollType: ""
+      },
+      mods: []
+    };
+    
     current[effIndex].mods ??= [];
     current[effIndex].mods.push({
       path: "dicePool", // adapt to your schema
