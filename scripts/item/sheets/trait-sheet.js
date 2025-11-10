@@ -7,11 +7,11 @@ const SYSTEM_ID = "YOUR_SYSTEM_ID"; // e.g., "colonial-weather"
 // Optionally map different item types to different templates.
 // If you only have one template, point all of them to the same file.
 const SHEET_TEMPLATES = {
-  trait:        `systems/${SYSTEM_ID}/templates/items/trait-sheet.hbs`,
-  merit:        `systems/${SYSTEM_ID}/templates/items/trait-sheet.hbs`,
-  flaw:         `systems/${SYSTEM_ID}/templates/items/trait-sheet.hbs`,
-  background:   `systems/${SYSTEM_ID}/templates/items/trait-sheet.hbs`,
-  enhancement:  `systems/${SYSTEM_ID}/templates/items/trait-sheet.hbs`,
+  trait:        `systems/colonial-weather/templates/items/trait-sheet.hbs`,
+  merit:        `systems/colonial-weather/templates/items/trait-sheet.hbs`,
+  flaw:         `systems/colonial-weather/templates/items/trait-sheet.hbs`,
+  background:   `systems/colonial-weather/templates/items/trait-sheet.hbs`,
+  enhancement:  `systems/colonial-weather/templates/items/trait-sheet.hbs`,
 };
 
 // --- helpers --------------------------------------------------------------
