@@ -40,19 +40,21 @@
         <button type="button" class="effect-remove" data-index="{{i}}" title="Remove effect" aria-label="Remove effect">🗑️</button>
       </legend>
 
-      <div class="grid-3">
+      <div class="cw-grid-3">
         <label>Tags</label>
         <input name="system.effects.{{i}}.tags" list="cw-tags-list" value="{{eff.tags}}"/>
 
         <label>Roll Type</label>
         <select name="system.effects.{{i}}.rollType">
-          <option value="(any)" {{#if (eq eff.rollType "(any)")} }selected{{/if}}>(any)</option>
-          <option value="initiative" {{#if (eq eff.rollType "initiative")} }selected{{/if}}>initiative</option>
+        {{#select eff.rollType}}
+        <option value="(any)">(any)</option>
+        <option value="initiative">initiative</option>
+        {{/select}}
         </select>
       </div>
 
       {{#each eff.mods as |m j|}}
-        <div class="grid-4">
+        <div class="cw-grid-4">
           <select name="system.effects.{{i}}.mods.{{j}}.path">
             <option value="dicePool"   {{#if (eq m.path "dicePool")}}selected{{/if}}>dice pool</option>
             <option value="initiative" {{#if (eq m.path "initiative")}}selected{{/if}}>initiative</option>

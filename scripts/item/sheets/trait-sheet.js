@@ -2,10 +2,7 @@
 
 // --- config ---------------------------------------------------------------
 
-const SYSTEM_ID = "YOUR_SYSTEM_ID"; // e.g., "colonial-weather"
-
-// Optionally map different item types to different templates.
-// If you only have one template, point all of them to the same file.
+const SYSTEM_ID = "colonial-weather";
 const SHEET_TEMPLATES = {
   trait:        `systems/colonial-weather/templates/items/trait-sheet.hbs`,
   merit:        `systems/colonial-weather/templates/items/trait-sheet.hbs`,
