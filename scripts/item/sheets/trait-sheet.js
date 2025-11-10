@@ -100,19 +100,19 @@ export class CWTraitSheet extends foundry.appv1.sheets.ItemSheet {
   }
 
   async _onAddEffect(event) {
-    event.preventDefault();
-    const current = Array.isArray(this.item.system.effects) ? clone(this.item.system.effects) : [];
-    // Create the correct nested structure matching trait-sheet.hbs
-    current.push({
-      label: "New Effect",
-      when: {
-        tagsCsv: "",
-        rollType: "" // Corresponds to the "(any)" option with value=""
-      },
-      mods: []
-    });
-    await this.item.update({ "system.effects": current });
-  }
+  event.preventDefault();
+  const current = Array.isArray(this.item.system.effects) ? clone(this.item.system.effects) : [];
+  // Create the correct nested structure matching trait-sheet.hbs
+  current.push({
+    label: "New Effect",
+    when: {
+      tagsCsv: "",
+      rollType: "" // Corresponds to the "(any)" option with value=""
+    },
+    mods: []
+  });
+  await this.item.update({ "system.effects": current });
+}
 
   async _onRemoveEffect(event) {
     event.preventDefault();
@@ -123,29 +123,29 @@ export class CWTraitSheet extends foundry.appv1.sheets.ItemSheet {
   }
 
   async _onAddMod(event) {
-    event.preventDefault();
-    const effIndex = Number(event.currentTarget.dataset.index);
-    const current = Array.isArray(this.item.system.effects) ? clone(this.item.system.effects) : [];
+  event.preventDefault();
+  const effIndex = Number(event.currentTarget.dataset.index);
+  const current = Array.isArray(this.item.system.effects) ? clone(this.item.system.effects) : [];
 
-    // Also fix the default structure here, in case an effect has no mods
-    current[effIndex] ??= {
-      label: "New Effect",
-      when: {
-        tagsCsv: "",
-        rollType: ""
-      },
-      mods: []
-    };
-    
-    current[effIndex].mods ??= [];
-    current[effIndex].mods.push({
-      path: "dicePool", // adapt to your schema
-      op: "add",
-      value: 0
-    });
+  // Also fix the default structure here, in case an effect has no mods
+  current[effIndex] ??= {
+    label: "New Effect",
+    when: {
+      tagsCsv: "",
+      rollType: ""
+    },
+    mods: []
+  };
 
-    await this.item.update({ "system.effects": current });
-  }
+  current[effIndex].mods ??= [];
+  current[effIndex].mods.push({
+    path: "dicePool", // adapt to your schema
+    op: "add",
+    value: 0
+  });
+
+  await this.item.update({ "system.effects": current });
+}
 
   async _onRemoveMod(event) {
     event.preventDefault();
