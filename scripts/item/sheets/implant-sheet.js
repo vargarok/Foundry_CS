@@ -1,8 +1,27 @@
 // scripts/item/sheets/implant-sheet.js
+
 const TEMPLATE = "systems/colonial-weather/templates/items/implant-sheet.hbs";
 
 const safeArray = (v) => Array.isArray(v) ? v : (v ? [v] : []);
 const clone = (v) => foundry.utils.deepClone(v ?? {});
+
+// Same helper as in trait-sheet
+function formToObject(rootElem) {
+  const form = rootElem.querySelector("form") ?? rootElem;
+  const fd = new FormData(form);
+  const obj = {};
+
+  for (const [key, value] of fd.entries()) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (!Array.isArray(obj[key])) obj[key] = [obj[key]];
+      obj[key].push(value);
+    } else {
+      obj[key] = value;
+    }
+  }
+
+  return obj;
+}
 
 export class CWImplantSheet extends foundry.appv1.sheets.ItemSheet {
   static get defaultOptions() {
@@ -64,8 +83,10 @@ export class CWImplantSheet extends foundry.appv1.sheets.ItemSheet {
 
   async _onEffectsChanged(event) {
     event.preventDefault();
-    const formData = foundry.utils.formToObject(this.element[0]);
-    const expanded = foundry.utils.expandObject(formData);
+
+    const formDataObj = formToObject(this.element[0]);
+    const expanded = foundry.utils.expandObject(formDataObj);
+
     const incoming = expanded?.system?.effects ?? [];
     for (const eff of incoming) {
       if (!eff) continue;

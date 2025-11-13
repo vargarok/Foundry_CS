@@ -13,6 +13,26 @@ const SHEET_TEMPLATES = {
 const safeArray = (v) => Array.isArray(v) ? v : (v ? [v] : []);
 const clone = (v) => foundry.utils.deepClone(v ?? {});
 
+// Our own minimal form-to-object helper (since foundry.utils.formToObject is not present)
+function formToObject(rootElem) {
+  // grab the <form> if there is one, otherwise use the root element
+  const form = rootElem.querySelector("form") ?? rootElem;
+  const fd = new FormData(form);
+  const obj = {};
+
+  for (const [key, value] of fd.entries()) {
+    // Basic support for multiple fields with same name (arrays)
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (!Array.isArray(obj[key])) obj[key] = [obj[key]];
+      obj[key].push(value);
+    } else {
+      obj[key] = value;
+    }
+  }
+
+  return obj;
+}
+
 export class CWTraitSheet extends foundry.appv1.sheets.ItemSheet {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
@@ -73,8 +93,11 @@ export class CWTraitSheet extends foundry.appv1.sheets.ItemSheet {
 
   async _onEffectsChanged(event) {
     event.preventDefault();
-    const formData = foundry.utils.formToObject(this.element[0]);
-    const expanded = foundry.utils.expandObject(formData);
+
+    // ⬇️ use our own helper instead of foundry.utils.formToObject
+    const formDataObj = formToObject(this.element[0]);
+    const expanded = foundry.utils.expandObject(formDataObj);
+
     const incoming = expanded?.system?.effects ?? [];
     for (const eff of incoming) {
       if (!eff) continue;
