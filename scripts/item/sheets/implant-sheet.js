@@ -23,6 +23,32 @@ function formToObject(rootElem) {
   return obj;
 }
 
+function normalizeEffectsFromExpanded(expanded) {
+  let raw = expanded?.system?.effects ?? [];
+  let arr = [];
+
+  if (Array.isArray(raw)) {
+    arr = raw;
+  } else if (raw && typeof raw === "object") {
+    const keys = Object.keys(raw).sort((a, b) => Number(a) - Number(b));
+    arr = keys.map(k => raw[k]);
+  } else {
+    arr = [];
+  }
+
+  for (const eff of arr) {
+    if (!eff) continue;
+    if (eff.mods && !Array.isArray(eff.mods) && typeof eff.mods === "object") {
+      const mkeys = Object.keys(eff.mods).sort((a, b) => Number(a) - Number(b));
+      eff.mods = mkeys.map(k => eff.mods[k]);
+    } else {
+      eff.mods = safeArray(eff.mods);
+    }
+  }
+
+  return arr;
+}
+
 export class CWImplantSheet extends foundry.appv1.sheets.ItemSheet {
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
@@ -40,7 +66,13 @@ export class CWImplantSheet extends foundry.appv1.sheets.ItemSheet {
     const data = await super.getData(options);
     const sys = data.item.system ?? data.system ?? {};
 
-    const effects = Array.isArray(sys.effects) ? clone(sys.effects) : [];
+    let effectsRaw = sys.effects ?? [];
+    if (!Array.isArray(effectsRaw) && effectsRaw && typeof effectsRaw === "object") {
+      const keys = Object.keys(effectsRaw).sort((a, b) => Number(a) - Number(b));
+      effectsRaw = keys.map(k => effectsRaw[k]);
+    }
+
+    const effects = clone(effectsRaw);
     for (const eff of effects) {
       if (!eff) continue;
       eff.label ??= "";
@@ -86,12 +118,8 @@ export class CWImplantSheet extends foundry.appv1.sheets.ItemSheet {
 
     const formDataObj = formToObject(this.element[0]);
     const expanded = foundry.utils.expandObject(formDataObj);
+    const incoming = normalizeEffectsFromExpanded(expanded);
 
-    const incoming = expanded?.system?.effects ?? [];
-    for (const eff of incoming) {
-      if (!eff) continue;
-      eff.mods = safeArray(eff.mods);
-    }
     await this.item.update({ "system.effects": incoming });
   }
 

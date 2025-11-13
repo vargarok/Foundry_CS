@@ -13,15 +13,13 @@ const SHEET_TEMPLATES = {
 const safeArray = (v) => Array.isArray(v) ? v : (v ? [v] : []);
 const clone = (v) => foundry.utils.deepClone(v ?? {});
 
-// Our own minimal form-to-object helper (since foundry.utils.formToObject is not present)
+// Minimal form-to-object helper for v13
 function formToObject(rootElem) {
-  // grab the <form> if there is one, otherwise use the root element
   const form = rootElem.querySelector("form") ?? rootElem;
   const fd = new FormData(form);
   const obj = {};
 
   for (const [key, value] of fd.entries()) {
-    // Basic support for multiple fields with same name (arrays)
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       if (!Array.isArray(obj[key])) obj[key] = [obj[key]];
       obj[key].push(value);
@@ -31,6 +29,34 @@ function formToObject(rootElem) {
   }
 
   return obj;
+}
+
+// Convert expandObject output into a clean effects array
+function normalizeEffectsFromExpanded(expanded) {
+  let raw = expanded?.system?.effects ?? [];
+  let arr = [];
+
+  if (Array.isArray(raw)) {
+    arr = raw;
+  } else if (raw && typeof raw === "object") {
+    const keys = Object.keys(raw).sort((a, b) => Number(a) - Number(b));
+    arr = keys.map(k => raw[k]);
+  } else {
+    arr = [];
+  }
+
+  // Fix nested mods if they came through as objects
+  for (const eff of arr) {
+    if (!eff) continue;
+    if (eff.mods && !Array.isArray(eff.mods) && typeof eff.mods === "object") {
+      const mkeys = Object.keys(eff.mods).sort((a, b) => Number(a) - Number(b));
+      eff.mods = mkeys.map(k => eff.mods[k]);
+    } else {
+      eff.mods = safeArray(eff.mods);
+    }
+  }
+
+  return arr;
 }
 
 export class CWTraitSheet extends foundry.appv1.sheets.ItemSheet {
@@ -52,7 +78,16 @@ export class CWTraitSheet extends foundry.appv1.sheets.ItemSheet {
   async getData(options) {
     const data = await super.getData(options);
     const sys = data.item.system ?? data.system ?? {};
-    const effects = Array.isArray(sys.effects) ? clone(sys.effects) : [];
+    const effectsRaw = sys.effects ?? [];
+
+    // Normalize in case there’s already weird object-shaped data in the item
+    let effects = effectsRaw;
+    if (!Array.isArray(effectsRaw) && effectsRaw && typeof effectsRaw === "object") {
+      const keys = Object.keys(effectsRaw).sort((a, b) => Number(a) - Number(b));
+      effects = keys.map(k => effectsRaw[k]);
+    }
+
+    effects = clone(effects);
 
     for (const eff of effects) {
       if (!eff) continue;
@@ -94,15 +129,10 @@ export class CWTraitSheet extends foundry.appv1.sheets.ItemSheet {
   async _onEffectsChanged(event) {
     event.preventDefault();
 
-    // ⬇️ use our own helper instead of foundry.utils.formToObject
     const formDataObj = formToObject(this.element[0]);
     const expanded = foundry.utils.expandObject(formDataObj);
+    const incoming = normalizeEffectsFromExpanded(expanded);
 
-    const incoming = expanded?.system?.effects ?? [];
-    for (const eff of incoming) {
-      if (!eff) continue;
-      eff.mods = safeArray(eff.mods);
-    }
     await this.item.update({ "system.effects": incoming });
   }
 
