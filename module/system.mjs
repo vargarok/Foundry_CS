@@ -1,190 +1,127 @@
-
-// Colonial Weather System for Foundry VTT v13
+// Colonial Weather System - v13 ApplicationV2 implementation
 import { CWActor } from "./actor/cw-actor.mjs";
 import { CWItem } from "./item/cw-item.mjs";
 
-export const CW = {};
-
-CW.ATTR_ORDER = ["str","dex","sta","cha","soc","app","int","edu","wit"];
-
-CW.GRAVITIES = ["Zero","Low","Normal","High"];
-
-CW.SKILLS = {
-  athletics: "Athletics",
-  awareness: "Awareness",
-  brawl: "Brawl",
-  business: "Business",
-  computerUse: "Computer Use",
-  demolitions: "Demolitions",
-  disguise: "Disguise",
-  drive: "Drive",
-  empathy: "Empathy",
-  engineering: "Engineering",
-  etiquette: "Etiquette",
-  firearms: "Firearms",
-  forgery: "Forgery",
-  gambling: "Gambling",
-  gatherInformation: "Gather Information",
-  heavyWeapons: "Heavy Weapons",
-  intimidate: "Intimidate",
-  leadership: "Leadership",
-  linguistics: "Linguistics",
-  martialArts: "Martial Arts",
-  medicine: "Medicine",
-  melee: "Melee",
-  navigation: "Navigation",
-  perform: "Perform",
-  pilot: "Pilot",
-  repair: "Repair",
-  security: "Security",
-  stealth: "Stealth",
-  streetwise: "Streetwise",
-  subterfuge: "Subterfuge",
-  survival: "Survival",
-  technology: "Technology"
+export const CW = {
+  ID: "colonial-weather",
+  ATTR_ORDER: ["str","dex","sta","cha","soc","app","int","edu","wit"],
+  GRAVITIES: ["Zero","Low","Normal","High"]
 };
 
-Handlebars.registerHelper('eq', (a,b)=>a===b);
-
-
-// Minimal item sheet to avoid undefined errors in v13
-class CWItemSheet extends ItemSheet {
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ['colonial-weather', 'cw', 'sheet', 'item'],
-      template: 'systems/colonial-weather/templates/item/item-sheet.hbs',
-      width: 560,
-      height: 'auto',
-      resizable: true
-    });
-  }
-
-  /** v1 sheets still use jQuery html in activateListeners; keep it simple */
-  activateListeners(html) {
-    super.activateListeners(html);
-  }
-}
-
 Hooks.once("init", function() {
-  console.log("Colonial Weather | Initializing");
+  console.log("Colonial Weather | Initializing V13 system");
+
+  // Assign document classes
   CONFIG.Actor.documentClass = CWActor;
-  CONFIG.Item.documentClass = CWItem;
+  CONFIG.Item.documentClass  = CWItem;
 
-  // Register sheets
-  Actors.unregisterSheet("core", ActorSheet);
-  Actors.registerSheet("colonial-weather", CWCharacterSheet, { types: ["character"], makeDefault: true, label: game.i18n.localize("CW.Character") });
-  Actors.registerSheet("colonial-weather", CWNPCSheet, { types: ["npc"], makeDefault: false, label: game.i18n.localize("CW.NPC") });
-  Items.unregisterSheet("core", ItemSheet);
-  Items.registerSheet("colonial-weather", CWItemSheet, { makeDefault: true });
+  // Register V2 sheets
+  const { HandlebarsApplicationMixin } = foundry.applications.api;
+  const { ActorSheetV2, ItemSheetV2 } = foundry.applications.sheets;
 
-  // Make helpers available
-  game.cw = {
-    rollPool
+  class CWCharacterSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
+    static DEFAULT_OPTIONS = {
+      id: "cw-character-sheet",
+      tag: "form",
+      classes: ["cw","sheet","actor"],
+      window: { title: "CW.SheetActor" },
+      form: { submitOnChange: true, closeOnSubmit: false },
+      actions: {
+        rollSkill: this.#onRollSkill,
+        hitLoc:    this.#onHitLocation
+      }
+    };
+
+    static PARTS = {
+      form: { template: "systems/colonial-weather/templates/actor/character-sheet-v2.hbs" }
+    };
+
+    static async #onRollSkill(event, target) {
+      const section = target.closest(".skill-row");
+      const skillKey = section?.dataset?.skill;
+      const sheet = this;
+      const actor = sheet.document;
+      await CW.rollPool(actor, skillKey);
+    }
+
+    static async #onHitLocation(event, target) {
+      const sheet = this;
+      const actor = sheet.document;
+      const { value, label } = await CW.rollHitLocation();
+      await actor.update({ "system.health.location": value });
+      ui.notifications?.info(`Hit location: ${label} (${value})`);
+    }
+
+    async _preparePartContext(partId, context, options) {
+      context = await super._preparePartContext(partId, context, options);
+      const a = this.document.system?.attributes ?? {};
+      const s = this.document.system?.skills ?? {};
+      context.attributes = a;
+      context.skills     = s;
+      context.attrOrder  = CW.ATTR_ORDER;
+      context.gravities  = CW.GRAVITIES;
+      return context;
+    }
   }
+
+  class CWItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
+    static DEFAULT_OPTIONS = {
+      id: "cw-item-sheet",
+      tag: "form",
+      classes: ["cw","sheet","item"],
+      window: { title: "CW.SheetItem" },
+      form: { submitOnChange: true, closeOnSubmit: false }
+    };
+
+    static PARTS = {
+      form: { template: "systems/colonial-weather/templates/item/item-sheet-v2.hbs" }
+    };
+  }
+
+  // Register sheets via namespaced collections (V13)
+  foundry.documents.collections.Actors.registerSheet(CW.ID, CWCharacterSheet, {
+    types: ["character", "npc"],
+    makeDefault: true,
+    label: "CW.SheetActor"
+  });
+
+  foundry.documents.collections.Items.registerSheet(CW.ID, CWItemSheet, {
+    makeDefault: true,
+    label: "CW.SheetItem"
+  });
+
+  // Expose convenience API
+  game.cw = {
+    rollPool: CW.rollPool,
+    rollHitLocation: CW.rollHitLocation
+  };
 });
 
-/** Dice pool rolling per Colonial Weather rules.
- * Success on 7-10. If specialized, 10s re-roll and add.
- * Botch: 0 successes and at least one 1.
- */
-export async function rollPool({actor, pool=1, title="", specialized=false, willpower=false}) {
-  const rolls = [];
-  let successes = willpower ? 1 : 0;
-  let ones = 0;
-  let resultsStr = [];
-  let toRoll = pool;
-  while (toRoll > 0) {
-    const r = new Roll("1d10").evaluateSync();
-    const v = r.total;
-    rolls.push(v);
-    resultsStr.push(v);
-    if (v >= 7) {
-      successes += 1;
-      if (specialized && v === 10) {
-        toRoll += 1; // explode
-        resultsStr[resultsStr.length-1] = `${v}⇶`; // indicate re-roll
-      }
-    } else if (v === 1) {
-      ones += 1;
-    }
-    toRoll -= 1;
-  }
-  const botch = successes === 0 && ones > 0;
-  const templ = "systems/colonial-weather/templates/chat/dice-roll.hbs";
-  const html = await foundry.applications.handlebars.renderTemplate(templ, {
-    title: title || game.i18n.localize("CW.Roll"),
-    dicePool: pool,
-    specialized,
-    willpower,
-    results: resultsStr.join(", "),
-    successes,
-    botch
-  });
-  ChatMessage.create({content: html, style: CONST.CHAT_MESSAGE_STYLES.OTHER, speaker: ChatMessage.getSpeaker({actor}), flags: {cw: {successes, botch, rolls}}});
-  return {successes, botch, rolls};
-}
+CW.rollPool = async function(actor, skillKey) {
+  const sys = actor.system ?? {};
+  const sk = sys.skills?.[skillKey] ?? { value: 0, label: skillKey ?? "Skill", attr: "dex", specialized: false };
+  const attrKey = sk.attr || "dex";
+  const attr = sys.attributes?.[attrKey]?.value ?? 0;
+  const pool = (Number(attr) || 0) + (Number(sk.value) || 0);
+  const bonus = sk.specialized ? 1 : 0;
+  const dice = Math.max(pool + bonus, 1);
+  const roll = await (new Roll(`${dice}d10`)).evaluate();
 
-// Simple hit location (1-10): 1 head, 2 chest, 3-4 stomach, 5,7 right leg, 6,8 left leg, 9 right arm, 10 left arm
-export function rollHitLocation() {
-  const r = new Roll("1d10").evaluateSync().total;
-  const map = {1: "Head", 2:"Chest", 3:"Stomach", 4:"Stomach", 5:"Right leg", 6:"Left leg", 7:"Right leg", 8:"Left leg", 9:"Right arm", 10:"Left arm"};
-  return {value: r, label: map[r] || r};
-}
+  const results = roll.dice?.[0]?.results ?? [];
+  const successes = results.filter(r => (r.result ?? 0) >= 6).length;
+  const botch = (successes === 0) && results.some(r => r.result === 1);
 
-class CWBaseSheet extends ActorSheet {
-  get template() {
-    return "systems/colonial-weather/templates/actor/character-sheet.hbs";
-  }
-  async getData(options) {
-    const data = await super.getData(options);
-    data.gravities = CW.GRAVITIES;
-    return data;
-  }
+  const label = sk.label ?? skillKey ?? "Skill";
+  const flavor = `<strong>${foundry.utils.escapeHTML(actor.name)}</strong> rolls <em>${foundry.utils.escapeHTML(label)}</em> (${attrKey.toUpperCase()}+${foundry.utils.escapeHTML(label)})`;
+  await roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor });
+  return { successes, botch, dice };
+};
 
-  activateListeners(html) {
-    super.activateListeners(html);
-    html.find(".skills button").on("click", ev => {
-      const key = ev.currentTarget.dataset.skill;
-      const sk = this.actor.system.skills[key];
-      // Default attribute pairing: pick a likely attribute based on skill family or let user choose via prompt
-      const defaultAttrs = ["dex","int","wit","cha","str","soc","edu","sta","app"];
-      let attr = defaultAttrs.includes(key) ? key : null;
-      if (!attr) {
-        // crude mapping
-        const map = {
-          athletics:"str", awareness:"wit", brawl:"str", business:"soc",
-          computerUse:"int", demolitions:"int", disguise:"app", drive:"dex",
-          empathy:"cha", engineering:"int", etiquette:"soc", firearms:"dex",
-          forgery:"int", gambling:"wit", gatherInformation:"wit",
-          heavyWeapons:"dex", intimidate:"cha", leadership:"cha", linguistics:"edu",
-          martialArts:"dex", medicine:"int", melee:"dex", navigation:"int",
-          perform:"app", pilot:"dex", repair:"int", security:"int",
-          stealth:"dex", streetwise:"wit", subterfuge:"wit", survival:"wit", technology:"int"
-        };
-        attr = map[key] || "int";
-      }
-      const a = this.actor.system.attributes[attr]?.value ?? 0;
-      const pool = a + (sk?.value ?? 0);
-      const title = `${sk.label} (${attr.toUpperCase()} + ${sk.label})`;
-      const spendWP = ev.shiftKey && (this.actor.system.willpower?.value > 0);
-      if (spendWP) {
-        this.actor.update({"system.willpower.value": this.actor.system.willpower.value - 1});
-      }
-      rollPool({actor:this.actor, pool, title, specialized: !!sk.specialized, willpower: spendWP});
-    });
-
-    html.find("button.hitloc").on("click", ev => {
-      const {value, label} = rollHitLocation();
-      this.actor.update({"system.health.location": value});
-      ui.notifications?.info(`Hit location: ${label} (${value})`);
-    });
-  }
-}
-
-class CWCharacterSheet extends CWBaseSheet { }
-class CWNPCSheet extends CWBaseSheet { }
-
-// Register sheets globally
-globalThis.CWCharacterSheet = CWCharacterSheet;
-globalThis.CWNPCSheet = CWNPCSheet;
-globalThis.rollPool = rollPool;
+CW.rollHitLocation = async function() {
+  const r = await (new Roll("1d10")).evaluate();
+  const total = r.total ?? 0;
+  const map = {1:"Head", 2:"Chest", 3:"Stomach", 4:"Stomach", 5:"Right leg", 6:"Left leg", 7:"Right leg", 8:"Left leg", 9:"Right arm", 10:"Left arm"};
+  const label = map[total] ?? String(total);
+  await r.toMessage({ flavor: `Hit Location: ${label}` });
+  return { value: total, label };
+};

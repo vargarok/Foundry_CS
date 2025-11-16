@@ -15,5 +15,12 @@
   "CW.SciFi": "Sci\u2011Fi",
   "CW.Character": "Character",
   "CW.NPC": "NPC",
-  "CW.HitLocation": "Hit Location"
+  "CW.HitLocation": "Hit Location",
+  "CW.Name": "Name",
+  "CW.Player": "Player",
+  "CW.Gravity": "Gravity (Home / Here)",
+  "CW.SheetActor": "Colonial Weather Actor",
+  "CW.SheetItem": "Colonial Weather Item",
+  "CW.Type": "Type",
+  "CW.Description": "Description"
 }

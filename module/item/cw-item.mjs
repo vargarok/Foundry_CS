@@ -1,2 +1,1 @@
-
-export class CWItem extends Item { }
+export class CWItem extends Item {};
