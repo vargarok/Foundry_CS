@@ -17,16 +17,19 @@ Hooks.once("init", function() {
   CONFIG.Actor.documentClass = CWActor;
   CONFIG.Item.documentClass = CWItem;
 
-  // Register Sheets (V13 Style)
-  Actors.unregisterSheet("core", ActorSheet);
-  Actors.registerSheet("colonial-weather", CWActorSheet, {
+  // Register Sheets (V13 Strict Mode)
+  // Unregister the default Core sheets (which are now Legacy AppV1 sheets)
+  foundry.documents.collections.Actors.unregisterSheet("core", foundry.appv1.sheets.ActorSheet);
+  
+  foundry.documents.collections.Actors.registerSheet("colonial-weather", CWActorSheet, {
     types: ["character", "npc"],
     makeDefault: true,
     label: "Colonial Weather Actor"
   });
 
-  Items.unregisterSheet("core", ItemSheet);
-  Items.registerSheet("colonial-weather", CWItemSheet, {
+  foundry.documents.collections.Items.unregisterSheet("core", foundry.appv1.sheets.ItemSheet);
+  
+  foundry.documents.collections.Items.registerSheet("colonial-weather", CWItemSheet, {
     makeDefault: true,
     label: "Colonial Weather Item"
   });
