@@ -6,6 +6,15 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     tag: "form",
     classes: ["cw", "sheet", "actor"],
     position: { width: 750, height: 800 },
+    // Enable resizing
+    window: {
+      resizable: true
+    },
+    // Enable auto-saving
+    form: {
+      submitOnChange: true,
+      closeOnSubmit: false
+    },
     actions: {
       rollAttribute: this._onRollAttribute,
       rollSkill: this._onRollSkill,
@@ -16,14 +25,14 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   static PARTS = {
     header: { template: "systems/colonial-weather/templates/actor/parts/header.hbs" },
-    tabs: { template: "templates/generic/tab-navigation.hbs" }, // Core V13 generic tab support
+    tabs: { template: "templates/generic/tab-navigation.hbs" },
     attributes: { template: "systems/colonial-weather/templates/actor/parts/attributes.hbs" },
     skills: { template: "systems/colonial-weather/templates/actor/parts/skills.hbs" },
     bio: { template: "systems/colonial-weather/templates/actor/parts/bio.hbs" }
   };
 
   tabGroups = {
-    sheet: "attributes" // Default tab
+    sheet: "attributes"
   };
 
   async _prepareContext(options) {
@@ -49,7 +58,6 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async _onRollSkill(event, target) {
     const key = target.dataset.key;
     const skill = this.document.system.skills[key];
-    // Use the skill's default attribute, or prompt user (simplified here to default)
     this.document.rollDicePool(skill.attr, key);
   }
 
