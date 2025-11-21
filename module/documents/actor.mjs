@@ -4,9 +4,7 @@ export class CWActor extends Actor {
     const system = this.system;
     
     // --- 1. Initialize Skills if missing ---
-    // SAFETY CHECK: Ensure system.skills exists
     system.skills = system.skills || {};
-
     for (const [key, label] of Object.entries(CONFIG.CW.skills)) {
       if (!system.skills[key]) {
         system.skills[key] = { value: 0, label: label, specialized: false, attr: "dex" }; 
@@ -16,9 +14,7 @@ export class CWActor extends Actor {
     }
 
     // --- 2. Initialize Backgrounds if missing ---
-    // SAFETY CHECK: Ensure system.backgrounds exists
     system.backgrounds = system.backgrounds || {};
-
     for (const [key, label] of Object.entries(CONFIG.CW.backgrounds)) {
       if (!system.backgrounds[key]) {
         system.backgrounds[key] = { value: 0, label: label };
@@ -46,22 +42,22 @@ export class CWActor extends Actor {
     const effWit = system.derived.attributes.wit;
 
     // --- 4. Derived Stats ---
-    // Initiative: DEX + WIT
     system.derived.initiative = effDex + effWit;
-
-    // Movement
-    // Crawl 2m, Walk 7m, Run DEX+12, Sprint DEX*3+20
+    
     system.derived.moveWalk = 7;
     system.derived.moveRun = effDex + 12;
     system.derived.moveSprint = (effDex * 3) + 20;
 
-    // Throwing Range: STR * 12
     system.derived.throwRange = effStr * 12;
 
     // --- 5. Health Penalties ---
     let penalty = 0;
-    // Ensure health levels array exists
-    const levels = system.health.levels || [0,0,0,0,0,0,0];
+    
+    // FIX: Assign default array to the system object if missing
+    if (!system.health.levels) {
+        system.health.levels = [0, 0, 0, 0, 0, 0, 0];
+    }
+    const levels = system.health.levels;
     
     for (let i = 6; i >= 0; i--) {
       if (levels[i] > 0) { 
@@ -102,7 +98,6 @@ export class CWActor extends Actor {
     let pool = attrVal + skillVal + bonus;
     const woundPen = system.health.penalty;
     
-    // 99 indicates Incapacitated (set in config)
     if (woundPen === 99) {
        pool = 0;
     } else {

@@ -37,13 +37,15 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.actor = this.document;
     context.activeTab = this.tabGroups.sheet;
     
-    // Health Configuration for the Template
+    // FIX: Add safety check for health levels here as well
+    const healthLevels = system.health.levels || [0,0,0,0,0,0,0];
+
     context.healthConfig = CONFIG.CW.healthLevels.map((l, i) => {
         return {
             label: l.label,
             penalty: l.penalty,
             index: i,
-            checked: system.health.levels[i] > 0 // Simple check for now
+            checked: healthLevels[i] > 0
         };
     });
 
