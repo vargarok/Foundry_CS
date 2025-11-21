@@ -134,6 +134,19 @@
   text-shadow: 0 0 5px #ffd700;
 }
 
+/* Tab Content Visibility */
+.tab-content {
+  display: none; /* Hide by default */
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.tab-content.active {
+  display: flex; /* Show only when active */
+}
+
 /* Chat Rolls */
 .cw-chat-roll {
   background: var(--cw-panel);

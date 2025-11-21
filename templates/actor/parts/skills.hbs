@@ -1,4 +1,4 @@
-<div class="tab-content" data-group="sheet" data-tab="skills">
+<div class="tab-content {{#if (eq activeTab 'skills')}}active{{/if}}" data-group="sheet" data-tab="skills">
   <div class="skills-list">
     {{#each system.skills as |skill key|}}
     <div class="skill-item">

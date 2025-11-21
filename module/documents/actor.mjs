@@ -7,15 +7,24 @@ export class CWActor extends Actor {
   prepareDerivedData() {
     const system = this.system;
     
-    // Initialize skills if empty (first run)
-    if (foundry.utils.isEmpty(system.skills)) {
+    // Fix 3: Robust skill initialization
+    // Iterate over ALL default skills. If missing in system, add them.
+    // Also ensure labels are always up to date.
+    if (CONFIG.CW.defaultSkills) {
       for (const [key, data] of Object.entries(CONFIG.CW.defaultSkills)) {
-        system.skills[key] = { 
-          value: 0, 
-          label: data.label, 
-          attr: data.attr, 
-          specialized: false 
-        };
+        if (!system.skills[key]) {
+          // Skill doesn't exist? Initialize it.
+          system.skills[key] = { 
+            value: 0, 
+            label: data.label, 
+            attr: data.attr, 
+            specialized: false 
+          };
+        } else {
+          // Skill exists? Ensure label and default attr are correct (fixes empty labels)
+          system.skills[key].label = data.label;
+          system.skills[key].attr = system.skills[key].attr || data.attr;
+        }
       }
     }
 
@@ -36,7 +45,6 @@ export class CWActor extends Actor {
   }
 
   _getGravityMods(home, here) {
-    // Simplified mapping logic
     const map = {
       "zero":   {"zero":[0,0,0], "low":[+1,-1,0], "normal":[+2,-1,0], "high":[+3,-2,+2]},
       "low":    {"zero":[-1,0,-1], "low":[0,0,0], "normal":[+1,0,0], "high":[+2,-1,+2]},

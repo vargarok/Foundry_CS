@@ -6,15 +6,8 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     tag: "form",
     classes: ["cw", "sheet", "actor"],
     position: { width: 750, height: 800 },
-    // Enable resizing
-    window: {
-      resizable: true
-    },
-    // Enable auto-saving
-    form: {
-      submitOnChange: true,
-      closeOnSubmit: false
-    },
+    window: { resizable: true },
+    form: { submitOnChange: true, closeOnSubmit: false },
     actions: {
       rollAttribute: this._onRollAttribute,
       rollSkill: this._onRollSkill,
@@ -38,6 +31,12 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const system = this.document.system;
+
+    // Fix 1: Explicitly provide 'actor' for templates expecting {{actor.name}}
+    context.actor = this.document;
+    
+    // Fix 2: Provide the currently active tab so templates can toggle visibility
+    context.activeTab = this.tabGroups.sheet;
 
     context.tabs = [
       { id: "attributes", group: "sheet", icon: "fa-solid fa-user", label: "Attributes" },
