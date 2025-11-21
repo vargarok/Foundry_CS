@@ -16,17 +16,20 @@ export class CWItemSheet extends HandlebarsApplicationMixin(DocumentSheetV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     
-    // 1. Pass the Item document itself (Critical for {{item.type}} checks)
     context.item = this.document;
-    
-    // 2. Pass system data
     context.system = this.document.system;
-    
-    // 3. Pass Config and Editable state
     context.config = CONFIG.CW;
-    context.editable = this.isEditable; 
     
-    // 4. Helper for trait types
+    // 1. Explicitly set editable state
+    context.editable = this.isEditable;
+
+    // 2. Enrich the description for the editor
+    // This converts secrets, links, and rolls into HTML
+    context.enrichedDescription = await TextEditor.enrichHTML(this.document.system.description, {
+        async: true,
+        relativeTo: this.document
+    });
+    
     context.traitTypes = { "merit": "Merit", "flaw": "Flaw" };
     
     return context;
