@@ -18,6 +18,6 @@
   ],
   "documentTypes": {
     "Actor": ["character", "npc"],
-    "Item": ["gear", "weapon", "armor", "trait"]
+    "Item": ["gear", "weapon", "armor", "trait", "cybernetic"]
   }
 }

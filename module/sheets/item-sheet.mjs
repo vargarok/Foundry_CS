@@ -1,10 +1,12 @@
 const { HandlebarsApplicationMixin } = foundry.applications.api;
 const { ItemSheetV2 } = foundry.applications.sheets;
+
 export class CWItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
   static DEFAULT_OPTIONS = {
     tag: "form",
     classes: ["cw", "sheet", "item"],
-    position: { width: 500, height: 450 }
+    position: { width: 500, height: 450 },
+    form: { submitOnChange: true, closeOnSubmit: false }
   };
 
   static PARTS = {
@@ -13,10 +15,18 @@ export class CWItemSheet extends HandlebarsApplicationMixin(ItemSheetV2) {
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    context.system = this.document.system;
-    context.config = CONFIG.CW; // Passes your skills/attributes to the sheet
     
-    // Helper for trait types
+    // 1. Pass the Item document itself (Critical for {{item.type}} checks)
+    context.item = this.document;
+    
+    // 2. Pass system data
+    context.system = this.document.system;
+    
+    // 3. Pass Config and Editable state
+    context.config = CONFIG.CW;
+    context.editable = this.isEditable; 
+    
+    // 4. Helper for trait types
     context.traitTypes = { "merit": "Merit", "flaw": "Flaw" };
     
     return context;
