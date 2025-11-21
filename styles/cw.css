@@ -271,13 +271,19 @@
 .cw-chat-roll .die.one { background: var(--cw-fail); }
 .cw-chat-roll .die.ten { border: 2px solid var(--cw-accent); }
 
-/* Ensure the ProseMirror editor fills the container */
-.editor-container prose-mirror {
-    min-height: 200px;
+/* Force the editor to take up space */
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 300px; /* Mandatory minimum height */
     height: 100%;
-    display: block;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    color: var(--cw-text);
+}
+
+.editor-container prose-mirror {
+    flex: 1;
+    min-height: 100%;
     padding: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--cw-text);
 }
