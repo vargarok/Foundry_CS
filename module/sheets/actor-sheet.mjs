@@ -146,8 +146,11 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
   static async _onRollWeapon(event, target) {
     const item = this.document.items.get(target.dataset.id);
-    // Use the weapon's defined attribute and skill
-    // Pass the weapon damage as a label or extra info
-    this.document.rollDicePool(item.system.attribute, item.system.skill);
+    
+    // Force the bonus to be a Number
+    const bonus = Number(item.system.attackBonus) || 0;
+    
+    // Pass it to the roll function
+    this.document.rollDicePool(item.system.attribute, item.system.skill, bonus);
 }
 }
