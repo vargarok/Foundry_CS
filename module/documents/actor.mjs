@@ -36,11 +36,50 @@ export class CWActor extends Actor {
       }
     }
 
-    // --- 3. Gravity Mods ---
+    // --- 3. Gravity Mods (Existing code) ---
     const home = (system.bio.gravityHome || "Normal").toLowerCase();
     const current = (system.bio.gravityCurrent || "Normal").toLowerCase();
     const gMods = this._getGravityMods(home, current);
-    system.derived.gravityMod = gMods;
+    
+    // --- 4. Calculate Cybernetic Immune Load ---
+    // PDF Rules: 
+    // < STA: No effect
+    // STA to 2*STA: Inconveniences
+    // 2*STA to 3*STA: -1 Penalty
+    // > 3*STA: -2 Penalty (and scaling)
+    
+    let totalLoad = 0;
+    for (const item of this.items) {
+      if (item.type === "cybernetic" && item.system.active) {
+        totalLoad += (item.system.immuneLoad || 0);
+      }
+    }
+    system.derived.immuneLoad = totalLoad;
+
+    // Calculate Penalty
+    const sta = system.attributes.sta.value || 1; // Raw stamina before mods
+    let immunePenalty = 0;
+    
+    if (totalLoad > (sta * 3)) {
+        immunePenalty = -2 - (Math.floor((totalLoad - (sta * 3)) / sta)); 
+    } else if (totalLoad > (sta * 2)) {
+        immunePenalty = -1;
+    }
+    
+    system.derived.immunePenalty = immunePenalty;
+
+    // --- 5. Apply Mods to Attributes ---
+    system.derived.attributes = {};
+    for (let [key, attr] of Object.entries(system.attributes)) {
+      let mod = 0;
+      if (["str", "dex", "sta"].includes(key)) mod = gMods[key] || 0;
+      
+      // Apply Immune System Penalty to Stamina (affects resistance rolls)
+      // Or applies to everything if the PDF implies general sickness. 
+      // For now, applying to logical physical pools makes sense, or handle as a global roll modifier.
+      
+      system.derived.attributes[key] = Math.max(0, (attr.value || 1) + mod);
+    }
 
     // Effective Attributes
     system.derived.attributes = {};

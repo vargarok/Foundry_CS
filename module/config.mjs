@@ -77,3 +77,19 @@ CW.healthLevels = [
   { label: "Crippled", penalty: -5 },
   { label: "Incapacitated", penalty: 99 }
 ];
+
+CW.damageTypes = {
+  bashing: "Bashing",
+  lethal: "Lethal",
+  aggravated: "Aggravated"
+};
+
+CW.armorLocations = {
+  head: "Head",
+  chest: "Chest",
+  stomach: "Stomach",
+  rArm: "Right Arm",
+  lArm: "Left Arm",
+  rLeg: "Right Leg",
+  lLeg: "Left Leg"
+};
