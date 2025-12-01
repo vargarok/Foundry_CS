@@ -6,7 +6,8 @@
       <h3>Physical</h3>
       {{#each config.attributes.physical as |key|}}
         {{#with (lookup ../system.attributes key) as |attr|}}
-        {{#with (lookup ../sourceAttributes key) as |source|}}
+        {{!-- FIX: Use @root to safely find sourceAttributes --}}
+        {{#with (lookup @root.sourceAttributes key) as |source|}}
         <div class="attr-row">
           <a data-action="rollAttribute" data-attr="{{key}}">{{localize attr.label}}</a>
           <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
@@ -30,7 +31,8 @@
       <h3>Social</h3>
       {{#each config.attributes.social as |key|}}
         {{#with (lookup ../system.attributes key) as |attr|}}
-        {{#with (lookup ../sourceAttributes key) as |source|}}
+        {{!-- FIX: Use @root --}}
+        {{#with (lookup @root.sourceAttributes key) as |source|}}
         <div class="attr-row">
           <a data-action="rollAttribute" data-attr="{{key}}">{{localize attr.label}}</a>
           <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
@@ -54,7 +56,8 @@
       <h3>Mental</h3>
       {{#each config.attributes.mental as |key|}}
         {{#with (lookup ../system.attributes key) as |attr|}}
-        {{#with (lookup ../sourceAttributes key) as |source|}}
+        {{!-- FIX: Use @root --}}
+        {{#with (lookup @root.sourceAttributes key) as |source|}}
         <div class="attr-row">
           <a data-action="rollAttribute" data-attr="{{key}}">{{localize attr.label}}</a>
           <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
@@ -79,23 +82,22 @@
         <h3>Derived Stats</h3>
         <div class="grid-2">
             <div>
-            <strong>Initiative:</strong> 
-            {{!-- Make it clickable --}}
-            <a data-action="rollInitiative" title="Roll Initiative">
-                {{system.derived.initiative}}
-            </a>
-        </div>
+                <strong>Initiative:</strong> 
+                <a data-action="rollInitiative" title="Roll Initiative">{{system.derived.initiative}}</a>
+            </div>
+            
             <div>
-            <strong>Cyberload:</strong>
+                <strong>Cyberload:</strong>
                 {{system.derived.immuneLoad}} / {{system.attributes.sta.value}}
                 {{#if (lt system.derived.immunePenalty 0)}}
                     <span style="color: var(--cw-fail); font-size: 0.9em;">({{system.derived.immunePenalty}})</span>
                 {{/if}}
             </div>
-        <div><strong>Throw Range:</strong> {{system.derived.throwRange}} m</div>
-        <div><strong>Walk:</strong> {{system.derived.moveWalk}} m</div>
-        <div><strong>Run:</strong> {{system.derived.moveRun}} m</div>
-        <div><strong>Sprint:</strong> {{system.derived.moveSprint}} m</div>
+
+            <div><strong>Throw Range:</strong> {{system.derived.throwRange}} m</div>
+            <div><strong>Walk:</strong> {{system.derived.moveWalk}} m</div>
+            <div><strong>Run:</strong> {{system.derived.moveRun}} m</div>
+            <div><strong>Sprint:</strong> {{system.derived.moveSprint}} m</div>
         </div>
     </div>
 
