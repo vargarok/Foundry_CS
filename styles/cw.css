@@ -346,11 +346,11 @@
   border-bottom: 1px solid var(--cw-border); /* Line Separation */
   padding: 5px;
   align-items: center;
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .item-list .item-row:last-child {
-  border-bottom: none;
+  border-bottom-color: transparent;
 }
 
 .item-list .item-row:hover {
