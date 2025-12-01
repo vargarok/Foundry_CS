@@ -106,3 +106,24 @@ CW.armorLocations = {
   rLeg: "Right Leg",
   lLeg: "Left Leg"
 };
+
+CW.effectOptions = {
+    // Attributes
+    "system.attributes.str.value": "Strength",
+    "system.attributes.dex.value": "Dexterity",
+    "system.attributes.sta.value": "Stamina",
+    "system.attributes.cha.value": "Charisma",
+    "system.attributes.soc.value": "Social",
+    "system.attributes.app.value": "Appearance",
+    "system.attributes.int.value": "Intelligence",
+    "system.attributes.edu.value": "Education",
+    "system.attributes.wit.value": "Wits",
+    
+    // Derived (Be careful with these, usually better to edit underlying attr)
+    "system.derived.initiative": "Initiative",
+    "system.derived.moveWalk": "Walk Speed",
+    
+    // Skills (Example of how to add them)
+    "system.skills.firearms.value": "Skill: Firearms",
+    "system.skills.athletics.value": "Skill: Athletics"
+};

@@ -5,6 +5,7 @@ export class CWItemSheet extends HandlebarsApplicationMixin(DocumentSheetV2) {
     tag: "form",
     classes: ["cw", "sheet", "item"],
     position: { width: 550, height: 600 },
+    window: { resizable: true },
     form: { submitOnChange: true, closeOnSubmit: false },
     actions: {
         changeTab: this._onChangeTab,

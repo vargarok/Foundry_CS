@@ -15,12 +15,23 @@
   color: var(--cw-text);
   font-family: "Roboto", sans-serif;
 }
+.cw.sheet.item {
+  background: var(--cw-bg);
+  color: var(--cw-text);
+  font-family: "Roboto", sans-serif;
+}
 
 /* Target the form element specifically since tag: "form" was used.
    This ensures the form takes up the full height of the window 
    and handles scrolling.
 */
 .cw.sheet.actor form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.cw.sheet.item form {
   display: flex;
   flex-direction: column;
   height: 100%;
