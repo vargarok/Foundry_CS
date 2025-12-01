@@ -1,6 +1,9 @@
 <div class="tab-content {{#if (eq activeTab 'effects')}}active{{/if}}">
-    <div class="item-list">
+    {{!-- Added 'effects-list' class for specific grid styling --}}
+    <div class="item-list effects-list">
+        
         <div class="header-row">
+            <span></span> {{!-- Empty span for Image Column --}}
             <span>Effect Name</span>
             <span>Source</span>
             <div class="item-controls">
@@ -17,9 +20,7 @@
             <div class="item-source">{{effect.sourceName}}</div>
             
             <div class="item-controls">
-                {{!-- Only allow toggling/deleting if it is a direct Actor effect --}}
                 {{#if effect.isItemEffect}}
-                    {{!-- For Items, maybe provide a link to open the Item sheet? --}}
                     <a data-action="editItem" data-id="{{effect.itemId}}" title="Edit Source Item"><i class="fas fa-external-link-alt"></i></a>
                 {{else}}
                     <a data-action="toggleEffect" title="Toggle Effect">

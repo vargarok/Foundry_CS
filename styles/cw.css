@@ -320,3 +320,66 @@
     background: rgba(0, 0, 0, 0.2);
     color: var(--cw-text);
 }
+
+/* --- GENERIC ITEM LISTS --- */
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px; /* Small gap between rows */
+}
+
+/* Header Row Styling */
+.item-list .header-row {
+  display: grid;
+  font-weight: bold;
+  color: var(--cw-accent);
+  border-bottom: 2px solid var(--cw-accent);
+  padding: 5px;
+  align-items: center;
+}
+
+/* Item Row Styling */
+.item-list .item-row {
+  display: grid;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid transparent; /* Placeholder for hover */
+  border-bottom: 1px solid var(--cw-border); /* Line Separation */
+  padding: 5px;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.item-list .item-row:last-child {
+  border-bottom: none;
+}
+
+.item-list .item-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--cw-accent);
+}
+
+.item-list .item-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.item-list .item-image img {
+  border: none;
+  background: black;
+  border-radius: 4px;
+}
+
+.item-list .item-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* --- EFFECTS TAB SPECIFIC GRID --- */
+/* Defines the column widths: Icon | Name | Source | Controls */
+.effects-list .header-row,
+.effects-list .item-row {
+  grid-template-columns: 30px 2fr 1.5fr 60px; 
+  gap: 10px;
+}
