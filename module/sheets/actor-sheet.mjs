@@ -16,6 +16,7 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       changeTab: this._onChangeTab,
       createItem: this._onCreateItem,
       editItem: this._onEditItem,
+      rollInitiative: this._onRollInitiative,
       deleteItem: this._onDeleteItem,
       rollWeapon: this._onRollWeapon
     }
@@ -120,6 +121,11 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const key = target.dataset.key;
     const current = this.document.system.skills[key].specialized;
     await this.document.update({[`system.skills.${key}.specialized`]: !current});
+  }
+
+  static async _onRollInitiative(event, target) {
+    // Call the helper on the actor
+    this.document.rollInitiativeDialog();
   }
   
   static async _onRollHitLocation(event, target) {

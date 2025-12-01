@@ -16,6 +16,13 @@ Hooks.once("init", function() {
   CONFIG.CW = CW;
   CONFIG.Actor.documentClass = CWActor;
   CONFIG.Item.documentClass = CWItem;
+  // Define the Initiative Formula
+  // 1d10 + Derived Initiative
+  // We use "decimals: 2" to break ties (higher static initiative wins)
+  CONFIG.Combat.initiative = {
+    formula: "1d10 + @derived.initiative",
+    decimals: 2
+  };
 
   // --- ADD THIS BLOCK ---
   Handlebars.registerHelper('array', function() {

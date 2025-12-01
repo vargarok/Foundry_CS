@@ -44,11 +44,17 @@
     <div class="panel">
         <h3>Derived Stats</h3>
         <div class="grid-2">
-            <div><strong>Initiative:</strong> {{system.derived.initiative}}</div>
-            <div><strong>Throw Range:</strong> {{system.derived.throwRange}} m</div>
-            <div><strong>Walk:</strong> {{system.derived.moveWalk}} m</div>
-            <div><strong>Run:</strong> {{system.derived.moveRun}} m</div>
-            <div><strong>Sprint:</strong> {{system.derived.moveSprint}} m</div>
+            <div>
+            <strong>Initiative:</strong> 
+            {{!-- Make it clickable --}}
+            <a data-action="rollInitiative" title="Roll Initiative">
+                {{system.derived.initiative}}
+            </a>
+        </div>
+        <div><strong>Throw Range:</strong> {{system.derived.throwRange}} m</div>
+        <div><strong>Walk:</strong> {{system.derived.moveWalk}} m</div>
+        <div><strong>Run:</strong> {{system.derived.moveRun}} m</div>
+        <div><strong>Sprint:</strong> {{system.derived.moveSprint}} m</div>
         </div>
     </div>
 

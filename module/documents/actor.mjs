@@ -125,6 +125,25 @@ export class CWActor extends Actor {
     return {str: res[0], dex: res[1], sta: res[2]};
   }
 
+  async rollInitiativeDialog() {
+    // 1. Check if we are in a Combat encounter
+    const combatant = this.getCombatant();
+    
+    if (!combatant) {
+        ui.notifications.warn(`${this.name} is not in the Combat Tracker!`);
+        return;
+    }
+
+    // 2. Roll Initiative using the system config
+    await combatant.combat.rollInitiative([combatant.id]);
+}
+
+// Helper to find the combatant for this actor
+getCombatant() {
+    if (!game.combat) return null;
+    return game.combat.combatants.find(c => c.actorId === this.id);
+}
+
   async rollDicePool(attributeKey, skillKey=null, bonus=0, item=null) {
     const system = this.system;
     
