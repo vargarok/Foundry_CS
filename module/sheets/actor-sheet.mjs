@@ -22,7 +22,8 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       createEffect: this._onCreateEffect,
       editEffect: this._onEditEffect,
       deleteEffect: this._onDeleteEffect,
-      toggleEffect: this._onToggleEffect
+      toggleEffect: this._onToggleEffect,
+      useItem: this._onUseItem
     }
   };
 
@@ -102,16 +103,40 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       { id: "bio", group: "sheet", icon: "fa-solid fa-book", label: "Bio" }
     ];
 
-    // 7. Prepare Active Effects
-    context.effects = this.document.effects.map(e => {
-    return {
-        id: e.id,
-        name: e.name,
-        img: e.img,
-        disabled: e.disabled,
-        sourceName: e.sourceName ?? "Unknown"
-    };
-    });
+    // 7. Prepare Active Effects (Aggregated from Actor AND Items)
+    const effects = [];
+
+    // A. Direct Actor Effects (Temporary buffs, debuffs, or manual adds)
+    for (const e of this.document.effects) {
+        effects.push({
+            id: e.id,
+            name: e.name,
+            img: e.img,
+            disabled: e.disabled,
+            sourceName: "Actor (Temporary)",
+            isItemEffect: false // Flag to know we can edit/delete directly
+        });
+    }
+
+    // B. Transfer Effects from Items (Equipment, Merits, Cybernetics)
+    for (const item of this.document.items) {
+        for (const e of item.effects) {
+            // Only show effects that are intended to transfer (Passive Buffs)
+            if (e.transfer) {
+                effects.push({
+                    id: e.id,
+                    name: e.name,
+                    img: e.img,
+                    disabled: e.disabled,
+                    sourceName: item.name,
+                    isItemEffect: true, // Flag to disable direct delete (must edit item)
+                    itemId: item.id     // Link back to item
+                });
+            }
+        }
+    }
+    
+    context.effects = effects;
 
     return context;
   }
@@ -254,4 +279,37 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const effect = this.document.effects.get(target.closest(".item-row").dataset.effectId);
     return effect.update({ disabled: !effect.disabled });
 }
+  static async _onUseItem(event, target) {
+    const item = this.document.items.get(target.dataset.id);
+    if (!item) return;
+
+    // 1. Check if it has effects to apply
+    if (item.effects.size === 0) {
+        ui.notifications.warn(`${item.name} has no effects to apply!`);
+        return;
+    }
+
+    // 2. Prepare effects for copying
+    // We toggle 'transfer' to false so they become specific to the Actor
+    // We also set the origin so we know where it came from later
+    const effectsData = item.effects.map(e => {
+        const data = e.toObject();
+        data.transfer = false; 
+        data.origin = item.uuid;
+        data.name = `${e.name} (${item.name})`; // Helpful labeling
+        return data;
+    });
+
+    // 3. Create the effects on the Actor
+    await this.document.createEmbeddedDocuments("ActiveEffect", effectsData);
+    ui.notifications.info(`Applied effects from ${item.name}`);
+
+    // 4. Consume the Item
+    const qty = item.system.quantity || 1;
+    if (qty > 1) {
+        await item.update({"system.quantity": qty - 1});
+    } else {
+        await item.delete();
+    }
+  }
 }

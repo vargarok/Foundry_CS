@@ -16,7 +16,7 @@
       </a>
       {{/each}}
   </nav>
-  
+
 <div class="tab-content {{#if (eq activeTab 'details')}}active{{/if}}">
   <div class="scrollable-content">
       {{!-- Generic Header --}}
@@ -156,6 +156,15 @@
           </div>
       </div>
       {{/if}}
+    
+      {{#if (eq item.type "gear")}}
+             <div class="grid-2">
+                 <div class="form-group">
+                     <label>Consumable?</label>
+                     <input type="checkbox" name="system.isConsumable" {{checked system.isConsumable}}/>
+                 </div>
+             </div>
+        {{/if}}
 
       <div class="editor-container">
         <label>Description</label>

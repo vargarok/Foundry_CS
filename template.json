@@ -89,7 +89,9 @@
       "surgeryDC": 12,
       "active": true
     },
-    "gear": { "templates": ["base"] },
+    "gear": { "templates": ["base"],
+    "isConsumable": false
+    },
     "trait": {
       "templates": ["base"],
       "type": "merit",
