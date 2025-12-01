@@ -7,7 +7,6 @@ export class CWActor extends Actor {
     system.skills = system.skills || {};
 
     for (const [key, data] of Object.entries(CONFIG.CW.skills)) {
-      // If skill doesn't exist, create it
       if (!system.skills[key]) {
         system.skills[key] = { 
             value: 0, 
@@ -16,10 +15,7 @@ export class CWActor extends Actor {
             attr: data.attr 
         }; 
       } else {
-        // FIX: Ensure we only assign the string label, not the object
         system.skills[key].label = data.label; 
-        
-        // Ensure attribute is set
         if (!system.skills[key].attr) {
             system.skills[key].attr = data.attr;
         }
@@ -36,18 +32,12 @@ export class CWActor extends Actor {
       }
     }
 
-    // --- 3. Gravity Mods (Existing code) ---
+    // --- 3. Gravity Mods ---
     const home = (system.bio.gravityHome || "Normal").toLowerCase();
     const current = (system.bio.gravityCurrent || "Normal").toLowerCase();
     const gMods = this._getGravityMods(home, current);
     
     // --- 4. Calculate Cybernetic Immune Load ---
-    // PDF Rules: 
-    // < STA: No effect
-    // STA to 2*STA: Inconveniences
-    // 2*STA to 3*STA: -1 Penalty
-    // > 3*STA: -2 Penalty (and scaling)
-    
     let totalLoad = 0;
     for (const item of this.items) {
       if (item.type === "cybernetic" && item.system.active) {
@@ -57,50 +47,51 @@ export class CWActor extends Actor {
     system.derived.immuneLoad = totalLoad;
 
     // Calculate Penalty
-    const sta = system.attributes.sta.value || 1; // Raw stamina before mods
+    const rawSta = system.attributes.sta.value || 1; 
     let immunePenalty = 0;
     
-    if (totalLoad > (sta * 3)) {
-        immunePenalty = -2 - (Math.floor((totalLoad - (sta * 3)) / sta)); 
-    } else if (totalLoad > (sta * 2)) {
+    if (totalLoad > (rawSta * 3)) {
+        immunePenalty = -2 - (Math.floor((totalLoad - (rawSta * 3)) / rawSta)); 
+    } else if (totalLoad > (rawSta * 2)) {
         immunePenalty = -1;
     }
     
     system.derived.immunePenalty = immunePenalty;
 
-    // --- 5. Apply Mods to Attributes ---
+    // --- 5. Apply Mods to Attributes (MERGED BLOCK) ---
+    // We calculate this ONCE to avoid overwriting data
     system.derived.attributes = {};
+    
     for (let [key, attr] of Object.entries(system.attributes)) {
       let mod = 0;
-      if (["str", "dex", "sta"].includes(key)) mod = gMods[key] || 0;
       
-      // Apply Immune System Penalty to Stamina (affects resistance rolls)
-      // Or applies to everything if the PDF implies general sickness. 
-      // For now, applying to logical physical pools makes sense, or handle as a global roll modifier.
+      // A. Apply Gravity Mods (Physical Only)
+      if (["str", "dex", "sta"].includes(key)) {
+          mod += (gMods[key] || 0);
+      }
       
+      // B. Apply Immune System Penalty (Stamina Only)
+      if (key === "sta" && immunePenalty !== 0) {
+          mod += immunePenalty;
+      }
+      
+      // Calculate Effective Value (Minimum 0)
       system.derived.attributes[key] = Math.max(0, (attr.value || 1) + mod);
     }
 
-    // Effective Attributes
-    system.derived.attributes = {};
-    for (let [key, attr] of Object.entries(system.attributes)) {
-      let mod = 0;
-      if (["str", "dex", "sta"].includes(key)) mod = gMods[key] || 0;
-      system.derived.attributes[key] = Math.max(0, (attr.value || 1) + mod);
-    }
-
+    // --- 6. Derived Stats ---
+    // Use the effective (derived) attributes for these calculations
     const effStr = system.derived.attributes.str;
     const effDex = system.derived.attributes.dex;
     const effWit = system.derived.attributes.wit;
 
-    // --- 4. Derived Stats ---
     system.derived.initiative = effDex + effWit;
     system.derived.moveWalk = 7;
     system.derived.moveRun = effDex + 12;
     system.derived.moveSprint = (effDex * 3) + 20;
     system.derived.throwRange = effStr * 12;
 
-    // --- 5. Health Penalties ---
+    // --- 7. Health Penalties ---
     let penalty = 0;
     if (!system.health.levels) system.health.levels = [0,0,0,0,0,0,0];
     const levels = system.health.levels;
