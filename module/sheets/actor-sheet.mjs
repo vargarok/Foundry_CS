@@ -47,6 +47,10 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const context = await super._prepareContext(options);
     const system = this.document.system;
 
+    // Get the Raw Source Data (The "Base" values before Active Effects)
+    const source = this.document.toObject(); 
+    context.sourceAttributes = source.system.attributes;
+
     // 2. Prepare basic Actor data
     context.actor = this.document;
     context.activeTab = this.tabGroups.sheet;

@@ -4,11 +4,30 @@
     <div class="attr-column">
       <h3>Physical</h3>
       {{#each config.attributes.physical as |key|}}
+        {{!-- We need both the Prepared Data (attr) and the Raw Source (source) --}}
         {{#with (lookup ../system.attributes key) as |attr|}}
+        {{#with (lookup ../sourceAttributes key) as |source|}}
+        
         <div class="attr-row">
           <a data-action="rollAttribute" data-attr="{{key}}">{{localize attr.label}}</a>
-          <input type="number" name="system.attributes.{{key}}.value" value="{{attr.value}}"/>
+          
+          <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
+              {{!-- INPUT: Uses 'source.value' (Base). Editing this saves to the DB correctly. --}}
+              <input type="number" name="system.attributes.{{key}}.value" value="{{source.value}}" style="width: 30px; text-align: center;"/>
+              
+              {{!-- EFFECTIVE: Uses 'system.derived' (Base + Active Effects + Gravity) --}}
+              {{#with (lookup ../../../system.derived.attributes key) as |eff|}}
+                 {{!-- Compare Effective vs Base --}}
+                 {{#if (ne eff source.value)}}
+                    <span style="font-weight: bold; {{#if (lt eff source.value)}}color:var(--cw-fail);{{else}}color:var(--cw-success);{{/if}}">
+                        ({{eff}})
+                    </span>
+                 {{/if}}
+              {{/with}}
+          </div>
         </div>
+        
+        {{/with}}
         {{/with}}
       {{/each}}
     </div>
@@ -17,28 +36,63 @@
     <div class="attr-column">
       <h3>Social</h3>
       {{#each config.attributes.social as |key|}}
+        {{!-- We need both the Prepared Data (attr) and the Raw Source (source) --}}
         {{#with (lookup ../system.attributes key) as |attr|}}
+        {{#with (lookup ../sourceAttributes key) as |source|}}
+        
         <div class="attr-row">
           <a data-action="rollAttribute" data-attr="{{key}}">{{localize attr.label}}</a>
-          <input type="number" name="system.attributes.{{key}}.value" value="{{attr.value}}"/>
+          
+          <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
+              {{!-- INPUT: Uses 'source.value' (Base). Editing this saves to the DB correctly. --}}
+              <input type="number" name="system.attributes.{{key}}.value" value="{{source.value}}" style="width: 30px; text-align: center;"/>
+              
+              {{!-- EFFECTIVE: Uses 'system.derived' (Base + Active Effects + Gravity) --}}
+              {{#with (lookup ../../../system.derived.attributes key) as |eff|}}
+                 {{!-- Compare Effective vs Base --}}
+                 {{#if (ne eff source.value)}}
+                    <span style="font-weight: bold; {{#if (lt eff source.value)}}color:var(--cw-fail);{{else}}color:var(--cw-success);{{/if}}">
+                        ({{eff}})
+                    </span>
+                 {{/if}}
+              {{/with}}
+          </div>
         </div>
+        
+        {{/with}}
         {{/with}}
       {{/each}}
-    </div>
 
     {{!-- Mental --}}
     <div class="attr-column">
       <h3>Mental</h3>
       {{#each config.attributes.mental as |key|}}
+        {{!-- We need both the Prepared Data (attr) and the Raw Source (source) --}}
         {{#with (lookup ../system.attributes key) as |attr|}}
+        {{#with (lookup ../sourceAttributes key) as |source|}}
+        
         <div class="attr-row">
           <a data-action="rollAttribute" data-attr="{{key}}">{{localize attr.label}}</a>
-          <input type="number" name="system.attributes.{{key}}.value" value="{{attr.value}}"/>
+          
+          <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
+              {{!-- INPUT: Uses 'source.value' (Base). Editing this saves to the DB correctly. --}}
+              <input type="number" name="system.attributes.{{key}}.value" value="{{source.value}}" style="width: 30px; text-align: center;"/>
+              
+              {{!-- EFFECTIVE: Uses 'system.derived' (Base + Active Effects + Gravity) --}}
+              {{#with (lookup ../../../system.derived.attributes key) as |eff|}}
+                 {{!-- Compare Effective vs Base --}}
+                 {{#if (ne eff source.value)}}
+                    <span style="font-weight: bold; {{#if (lt eff source.value)}}color:var(--cw-fail);{{else}}color:var(--cw-success);{{/if}}">
+                        ({{eff}})
+                    </span>
+                 {{/if}}
+              {{/with}}
+          </div>
         </div>
+        
+        {{/with}}
         {{/with}}
       {{/each}}
-    </div>
-  </div>
 
   <div class="derived-row">
     <div class="panel">
