@@ -42,13 +42,43 @@
   
   <hr>
   
-  <div class="bio-text-area">
-      <h3>Merits</h3>
-      <textarea name="system.bio.merits">{{system.bio.merits}}</textarea>
+  <div class="bio-traits">
+      <h3>Merits & Flaws <a data-action="createItem" data-type="trait"><i class="fa-solid fa-plus"></i></a></h3>
       
-      <h3>Flaws</h3>
-      <textarea name="system.bio.flaws">{{system.bio.flaws}}</textarea>
+      <div class="item-list trait-list">
+          <div class="header-row">
+              <span></span>
+              <span>Name</span>
+              <span class="center-text">Type</span>
+              <span class="center-text">Cost</span>
+              <span></span>
+          </div>
 
+          {{#each inventory.traits as |item|}}
+          <div class="item-row">
+              <div class="item-image"><img src="{{item.img}}" width="24" height="24"/></div>
+              
+              <span class="item-name">{{item.name}}</span>
+              
+              <div class="center-text" style="text-transform: capitalize;">
+                  {{item.system.type}}
+              </div>
+              
+              <div class="center-text">{{item.system.cost}}</div>
+              
+              <div class="item-controls">
+                  <a data-action="editItem" data-id="{{item.id}}"><i class="fa-solid fa-edit"></i></a>
+                  <a data-action="deleteItem" data-id="{{item.id}}"><i class="fa-solid fa-trash"></i></a>
+              </div>
+          </div>
+          {{/each}}
+      </div>
+  </div>
+
+  <hr>
+
+  {{!-- Keep Notes as a text area --}}
+  <div class="bio-text-area">
       <h3>Notes</h3>
       <textarea name="system.bio.notes">{{system.bio.notes}}</textarea>
   </div>

@@ -383,3 +383,38 @@
   grid-template-columns: 30px 2fr 1.5fr 60px; 
   gap: 10px;
 }
+
+/* --- INVENTORY GRID LAYOUTS --- */
+
+/* Weapons: Icon | Name | Ammo | Damage | Controls */
+.weapon-list .header-row,
+.weapon-list .item-row {
+  grid-template-columns: 30px 4fr 2fr 1fr 60px;
+  gap: 5px;
+}
+
+/* Cybernetics: Icon | Name | Load | Controls */
+.cyber-list .header-row,
+.cyber-list .item-row {
+  grid-template-columns: 30px 4fr 1fr 60px;
+  gap: 5px;
+}
+
+/* Gear: Icon | Name | Controls (Use + Edit/Del) */
+.gear-list .header-row,
+.gear-list .item-row {
+  grid-template-columns: 30px 5fr 80px;
+  gap: 5px;
+}
+
+/* Traits: Icon | Name | Type | Cost | Controls */
+.trait-list .header-row,
+.trait-list .item-row {
+  grid-template-columns: 30px 4fr 1fr 0.5fr 60px;
+  gap: 5px;
+}
+
+/* Small adjustments for text alignment */
+.item-list .center-text { text-align: center; }
+.item-list .right-text { text-align: right; }
+.item-list small { color: #888; font-size: 0.8em; }

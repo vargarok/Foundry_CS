@@ -1,18 +1,29 @@
 <div class="tab-content {{#if (eq activeTab 'inventory')}}active{{/if}}">
     
-    {{!-- Weapons List --}}
+    {{!-- WEAPONS --}}
     <h3>Weapons <a data-action="createItem" data-type="weapon"><i class="fa-solid fa-plus"></i></a></h3>
-    <div class="item-list">
+    <div class="item-list weapon-list">
+        <div class="header-row">
+            <span></span>
+            <span>Name</span>
+            <span class="center-text">Ammo</span>
+            <span class="center-text">Dmg</span>
+            <span></span>
+        </div>
         {{#each inventory.weapons as |item|}}
         <div class="item-row">
-            <img src="{{item.img}}" width="30" height="30"/>
+            <div class="item-image"><img src="{{item.img}}" width="24" height="24"/></div>
+            
             <a class="item-name" data-action="rollWeapon" data-id="{{item.id}}">{{item.name}}</a>
-            {{#if item.system.ammo.max}}
-            <span style="font-size: 0.8em; color: #aaa;">
-                {{item.system.ammo.value}} / {{item.system.ammo.max}}
-            </span>
-            {{/if}}
-            <span>{{item.system.damage}}</span>
+            
+            <div class="center-text">
+                {{#if item.system.ammo.max}}
+                <small>{{item.system.ammo.value}} / {{item.system.ammo.max}}</small>
+                {{else}}-{{/if}}
+            </div>
+            
+            <div class="center-text">{{item.system.damage}}</div>
+        
             <div class="item-controls">
                 <a data-action="editItem" data-id="{{item.id}}"><i class="fa-solid fa-edit"></i></a>
                 <a data-action="deleteItem" data-id="{{item.id}}"><i class="fa-solid fa-trash"></i></a>
@@ -21,14 +32,20 @@
         {{/each}}
     </div>
 
-    {{!-- Cybernetics List --}}
+    {{!-- CYBERNETICS --}}
     <h3>Cybernetics <a data-action="createItem" data-type="cybernetic"><i class="fa-solid fa-plus"></i></a></h3>
-    <div class="item-list">
+    <div class="item-list cyber-list">
+        <div class="header-row">
+            <span></span>
+            <span>Name</span>
+            <span class="center-text">Load</span>
+            <span></span>
+        </div>
         {{#each inventory.cybernetics as |item|}}
         <div class="item-row">
-            <img src="{{item.img}}" width="30" height="30"/>
+            <div class="item-image"><img src="{{item.img}}" width="24" height="24"/></div>
             <span class="item-name">{{item.name}}</span>
-            <span>Load: {{item.system.immuneLoad}}</span>
+            <div class="center-text">{{item.system.immuneLoad}}</div>
             <div class="item-controls">
                 <a data-action="editItem" data-id="{{item.id}}"><i class="fa-solid fa-edit"></i></a>
                 <a data-action="deleteItem" data-id="{{item.id}}"><i class="fa-solid fa-trash"></i></a>
@@ -37,37 +54,22 @@
         {{/each}}
     </div>
 
-    {{!-- Traits (Merits/Flaws) --}}
-    <h3>Merits & Flaws <a data-action="createItem" data-type="trait"><i class="fa-solid fa-plus"></i></a></h3>
-    <div class="item-list">
-        {{#each inventory.traits as |item|}}
-        <div class="item-row">
-            <img src="{{item.img}}" width="30" height="30"/>
-            <span class="item-name">{{item.name}} ({{item.system.type}})</span>
-            <div class="item-controls">
-                <a data-action="editItem" data-id="{{item.id}}"><i class="fa-solid fa-edit"></i></a>
-                <a data-action="deleteItem" data-id="{{item.id}}"><i class="fa-solid fa-trash"></i></a>
-            </div>
-        </div>
-        {{/each}}
-    </div>
-
-    {{!-- Standard Gear --}}
+    {{!-- GEAR --}}
     <h3>Gear <a data-action="createItem" data-type="gear"><i class="fa-solid fa-plus"></i></a></h3>
-    <div class="item-list">
+    <div class="item-list gear-list">
+        <div class="header-row">
+            <span></span>
+            <span>Name</span>
+            <span></span>
+        </div>
         {{#each inventory.gear as |item|}}
         <div class="item-row">
-            <img src="{{item.img}}" width="30" height="30"/>
+            <div class="item-image"><img src="{{item.img}}" width="24" height="24"/></div>
             <span class="item-name">{{item.name}}</span>
             <div class="item-controls">
-                
-                {{!-- USE BUTTON --}}
                 {{#if item.system.isConsumable}}
-                <a data-action="useItem" data-id="{{item.id}}" title="Use/Consume">
-                    <i class="fa-solid fa-prescription-bottle-medical"></i>
-                </a>
+                <a data-action="useItem" data-id="{{item.id}}" title="Use Item"><i class="fa-solid fa-prescription-bottle-medical"></i></a>
                 {{/if}}
-                
                 <a data-action="editItem" data-id="{{item.id}}"><i class="fa-solid fa-edit"></i></a>
                 <a data-action="deleteItem" data-id="{{item.id}}"><i class="fa-solid fa-trash"></i></a>
             </div>
