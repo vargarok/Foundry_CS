@@ -4,81 +4,61 @@
     {{!-- Physical --}}
     <div class="attr-column">
       <h3>Physical</h3>
-      {{#each config.attributes.physical as |key|}}
-        {{#with (lookup ../system.attributes key) as |attr|}}
-        {{!-- FIX: Use @root to safely find sourceAttributes --}}
-        {{#with (lookup @root.sourceAttributes key) as |source|}}
+      {{#each viewAttributes.physical as |attr|}}
         <div class="attr-row">
-          <a data-action="rollAttribute" data-attr="{{key}}">{{localize attr.label}}</a>
+          <a data-action="rollAttribute" data-attr="{{attr.key}}">{{localize attr.label}}</a>
           <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
-              <input type="number" name="system.attributes.{{key}}.value" value="{{source.value}}" style="width: 30px; text-align: center;"/>
-              {{#with (lookup ../../../system.derived.attributes key) as |eff|}}
-                 {{#if (ne eff source.value)}}
-                    <span style="font-weight: bold; {{#if (lt eff source.value)}}color:var(--cw-fail);{{else}}color:var(--cw-success);{{/if}}">
-                        ({{eff}})
-                    </span>
-                 {{/if}}
-              {{/with}}
+              {{!-- Edit the Base Value --}}
+              <input type="number" name="system.attributes.{{attr.key}}.value" value="{{attr.base}}" style="width: 30px; text-align: center;"/>
+              
+              {{!-- Show Effective if Modified --}}
+              {{#if attr.isModified}}
+                <span style="font-weight: bold; {{attr.cssClass}}">
+                    ({{attr.effective}})
+                </span>
+              {{/if}}
           </div>
         </div>
-        {{/with}}
-        {{/with}}
       {{/each}}
     </div>
     
     {{!-- Social --}}
     <div class="attr-column">
       <h3>Social</h3>
-      {{#each config.attributes.social as |key|}}
-        {{#with (lookup ../system.attributes key) as |attr|}}
-        {{!-- FIX: Use @root --}}
-        {{#with (lookup @root.sourceAttributes key) as |source|}}
+      {{#each viewAttributes.social as |attr|}}
         <div class="attr-row">
-          <a data-action="rollAttribute" data-attr="{{key}}">{{localize attr.label}}</a>
+          <a data-action="rollAttribute" data-attr="{{attr.key}}">{{localize attr.label}}</a>
           <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
-              <input type="number" name="system.attributes.{{key}}.value" value="{{source.value}}" style="width: 30px; text-align: center;"/>
-              {{#with (lookup ../../../system.derived.attributes key) as |eff|}}
-                 {{#if (ne eff source.value)}}
-                    <span style="font-weight: bold; {{#if (lt eff source.value)}}color:var(--cw-fail);{{else}}color:var(--cw-success);{{/if}}">
-                        ({{eff}})
-                    </span>
-                 {{/if}}
-              {{/with}}
+              <input type="number" name="system.attributes.{{attr.key}}.value" value="{{attr.base}}" style="width: 30px; text-align: center;"/>
+              {{#if attr.isModified}}
+                <span style="font-weight: bold; {{attr.cssClass}}">({{attr.effective}})</span>
+              {{/if}}
           </div>
         </div>
-        {{/with}}
-        {{/with}}
       {{/each}}
     </div>
 
     {{!-- Mental --}}
     <div class="attr-column">
       <h3>Mental</h3>
-      {{#each config.attributes.mental as |key|}}
-        {{#with (lookup ../system.attributes key) as |attr|}}
-        {{!-- FIX: Use @root --}}
-        {{#with (lookup @root.sourceAttributes key) as |source|}}
+      {{#each viewAttributes.mental as |attr|}}
         <div class="attr-row">
-          <a data-action="rollAttribute" data-attr="{{key}}">{{localize attr.label}}</a>
+          <a data-action="rollAttribute" data-attr="{{attr.key}}">{{localize attr.label}}</a>
           <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
-              <input type="number" name="system.attributes.{{key}}.value" value="{{source.value}}" style="width: 30px; text-align: center;"/>
-              {{#with (lookup ../../../system.derived.attributes key) as |eff|}}
-                 {{#if (ne eff source.value)}}
-                    <span style="font-weight: bold; {{#if (lt eff source.value)}}color:var(--cw-fail);{{else}}color:var(--cw-success);{{/if}}">
-                        ({{eff}})
-                    </span>
-                 {{/if}}
-              {{/with}}
+              <input type="number" name="system.attributes.{{attr.key}}.value" value="{{attr.base}}" style="width: 30px; text-align: center;"/>
+              {{#if attr.isModified}}
+                <span style="font-weight: bold; {{attr.cssClass}}">({{attr.effective}})</span>
+              {{/if}}
           </div>
         </div>
-        {{/with}}
-        {{/with}}
       {{/each}}
     </div>
   </div>
 
+  {{!-- (Keep your Derived Stats & Health section below unchanged) --}}
   <div class="derived-row">
-    <div class="panel">
+      {{!-- ... existing derived stats code ... --}}
+      <div class="panel">
         <h3>Derived Stats</h3>
         <div class="grid-2">
             <div>

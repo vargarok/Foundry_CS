@@ -43,13 +43,39 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   };
 
   async _prepareContext(options) {
-    // 1. Get the base context
     const context = await super._prepareContext(options);
     const system = this.document.system;
+    const source = this.document.toObject().system; // Raw DB data
 
-    // 1.1 Get the Raw Source Data (The "Base" values before Active Effects)
-    const source = this.document.toObject(); 
-    context.sourceAttributes = source.system.attributes;
+    // --- NEW: Pre-calculate Attributes for Display ---
+    // This replaces the complex template logic and fixes the "0" bug
+    const attributes = {};
+    const groups = {
+        physical: CONFIG.CW.attributes.physical,
+        social: CONFIG.CW.attributes.social,
+        mental: CONFIG.CW.attributes.mental
+    };
+
+    // Helper to build the display object
+    const buildAttr = (key) => {
+        const base = source.attributes[key].value;
+        const eff = system.derived.attributes[key]; // Calculated in Actor.mjs
+        return {
+            key: key,
+            label: system.attributes[key].label,
+            base: base,
+            effective: eff,
+            isModified: base !== eff,
+            cssClass: eff < base ? "color:var(--cw-fail);" : "color:var(--cw-success);"
+        };
+    };
+
+    // Build lists for the template
+    context.viewAttributes = {
+        physical: groups.physical.map(buildAttr),
+        social: groups.social.map(buildAttr),
+        mental: groups.mental.map(buildAttr)
+    };
 
     // 2. Prepare basic Actor data
     context.actor = this.document;
