@@ -8,15 +8,17 @@
         <div class="attr-row">
           <a data-action="rollAttribute" data-attr="{{attr.key}}">{{localize attr.label}}</a>
           <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
-              {{!-- Edit the Base Value --}}
-              <input type="number" name="system.attributes.{{attr.key}}.value" value="{{attr.base}}" style="width: 30px; text-align: center;"/>
               
-              {{!-- Show Effective if Modified --}}
+              {{!-- MOVED: Show Effective Value to the LEFT of the input --}}
               {{#if attr.isModified}}
                 <span style="font-weight: bold; {{attr.cssClass}}">
                     ({{attr.effective}})
                 </span>
               {{/if}}
+
+              {{!-- Edit the Base Value (Now consistently on the right) --}}
+              <input type="number" name="system.attributes.{{attr.key}}.value" value="{{attr.base}}" style="width: 30px; text-align: center;"/>
+              
           </div>
         </div>
       {{/each}}
@@ -29,10 +31,12 @@
         <div class="attr-row">
           <a data-action="rollAttribute" data-attr="{{attr.key}}">{{localize attr.label}}</a>
           <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
-              <input type="number" name="system.attributes.{{attr.key}}.value" value="{{attr.base}}" style="width: 30px; text-align: center;"/>
+              {{!-- MOVED --}}
               {{#if attr.isModified}}
                 <span style="font-weight: bold; {{attr.cssClass}}">({{attr.effective}})</span>
               {{/if}}
+
+              <input type="number" name="system.attributes.{{attr.key}}.value" value="{{attr.base}}" style="width: 30px; text-align: center;"/>
           </div>
         </div>
       {{/each}}
@@ -45,19 +49,20 @@
         <div class="attr-row">
           <a data-action="rollAttribute" data-attr="{{attr.key}}">{{localize attr.label}}</a>
           <div class="flexrow" style="align-items: center; justify-content: flex-end; gap: 5px;">
-              <input type="number" name="system.attributes.{{attr.key}}.value" value="{{attr.base}}" style="width: 30px; text-align: center;"/>
+              {{!-- MOVED --}}
               {{#if attr.isModified}}
                 <span style="font-weight: bold; {{attr.cssClass}}">({{attr.effective}})</span>
               {{/if}}
+
+              <input type="number" name="system.attributes.{{attr.key}}.value" value="{{attr.base}}" style="width: 30px; text-align: center;"/>
           </div>
         </div>
       {{/each}}
     </div>
   </div>
 
-  {{!-- (Keep your Derived Stats & Health section below unchanged) --}}
+  {{!-- Derived Stats & Health (Unchanged) --}}
   <div class="derived-row">
-      {{!-- ... existing derived stats code ... --}}
       <div class="panel">
         <h3>Derived Stats</h3>
         <div class="grid-2">

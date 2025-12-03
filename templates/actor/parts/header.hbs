@@ -11,12 +11,12 @@
     </div>
     <div class="row">
       <label>Gravity (Home/Current)</label>
-      <div class="flexrow">
-        {{!-- Update name and use config.gravityTypes --}}
+      {{!-- Added inline style to force items to the left with a small gap --}}
+      <div class="flexrow" style="justify-content: flex-start; gap: 5px;">
         <select name="system.bio.gravityHome">
           {{selectOptions @root.config.gravityTypes selected=system.bio.gravityHome}}
         </select>
-        <span>/</span>
+        <span style="flex: 0 0 auto;">/</span>
         <select name="system.bio.gravityCurrent">
            {{selectOptions @root.config.gravityTypes selected=system.bio.gravityCurrent}}
         </select>
