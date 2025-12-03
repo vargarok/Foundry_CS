@@ -127,3 +127,10 @@ CW.effectOptions = {
     "system.skills.firearms.value": "Skill: Firearms",
     "system.skills.athletics.value": "Skill: Athletics"
 };
+
+CW.gravityTypes = {
+  "Zero": "Zero",
+  "Low": "Low",
+  "Normal": "Normal",
+  "High": "High"
+};
