@@ -69,25 +69,30 @@ export class CWItemSheet extends HandlebarsApplicationMixin(DocumentSheetV2) {
     return context;
   }
   
-  // We need to handle the armor checkbox array manually on form submission
-  static async _onSubmit(event, form, formData) {
-      const item = this.document;
-      
-      if (item.type === "armor") {
-          // Extract keys that are checked from the form data
-          // This depends on how you name inputs in the HTML. 
-          // If named "coverage.head", formData.object will handle it if we use `name="system.coverage"` array approach, 
-          // but standard HTML checkboxes usually require custom handling for arrays.
-          
-          const coverage = [];
-          for (const key of Object.keys(CONFIG.CW.armorLocations)) {
-              if (formData.get(`coverage.${key}`)) coverage.push(key);
-              formData.delete(`coverage.${key}`); // Cleanup
-          }
-          formData.set("system.coverage", coverage);
-      }
-      
-      return super._onSubmit(event, form, formData);
+  // Process the form data to convert the "coverage.head" checkbox object 
+  // into the "system.coverage" array that the database expects.
+  _processFormData(event, form, formData) {
+    const data = super._processFormData(event, form, formData);
+
+    if (this.document.type === "armor") {
+        // 1. data.coverage will look like { head: true, chest: false, ... }
+        // We iterate over it to collect the 'true' keys.
+        const coverage = [];
+        if (data.coverage) {
+            for (const [key, isChecked] of Object.entries(data.coverage)) {
+                if (isChecked) {
+                    coverage.push(key);
+                }
+            }
+            
+            // 2. Set the actual system property
+            data["system.coverage"] = coverage;
+            
+            // 3. Clean up the temporary object so it doesn't get saved as junk data
+            delete data.coverage;
+        }
+    }
+    return data;
   }
   static async _onRollWeapon(event, target) {
     const item = this.document.items.get(target.dataset.id);
