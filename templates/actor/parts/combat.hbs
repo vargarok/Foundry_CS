@@ -24,7 +24,22 @@
                     {{/each}}
                 </div>
             </div>
-
+            <div class="panel" style="margin-top: 10px; text-align: center;">
+                <h3>Total Hit Points</h3>
+                <div class="flexrow" style="align-items: center; justify-content: center; gap: 10px;">
+                    
+                    <input type="number" name="system.health.total.value" value="{{system.health.total.value}}" style="width: 50px; text-align: center; font-weight: bold; font-size: 1.2em;" />
+                    
+                    <span style="font-size: 1.2em;"> / </span>
+                    
+                    <span style="font-size: 1.2em; font-weight: bold;">{{system.health.total.max}}</span>
+                </div>
+                
+                {{!-- Optional: Show Death Threshold --}}
+                <div style="font-size: 0.8em; color: var(--cw-fail); margin-top: 5px;">
+                    Death at: -{{multiply system.health.total.max 3}}
+                </div>
+            </div>
             {{!-- Body Status (Visual) --}}
             <div class="panel" style="margin-top: 10px;">
                 <h3>Body Status</h3>

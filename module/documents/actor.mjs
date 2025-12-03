@@ -127,6 +127,25 @@ export class CWActor extends Actor {
             }
         }
       }
+      
+    // --- 9. Calculate Total Hit Points ---
+    // Summing max HP from all locations to get Total Max
+    if (system.health.locations) {
+        let maxTotal = 0;
+        for (const loc of Object.values(system.health.locations)) {
+            maxTotal += (loc.max || 0);
+        }
+        
+        // Ensure total exists (if you just added it to template)
+        if (!system.health.total) system.health.total = { value: 0, max: 0 };
+
+        system.health.total.max = maxTotal;
+        
+        // Optional: If value is null/undefined (new actor), set it to max
+        if (system.health.total.value === null || system.health.total.value === undefined) {
+            system.health.total.value = maxTotal;
+        }
+    }
   }
 
   _getGravityMods(home, here) {

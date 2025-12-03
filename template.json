@@ -38,6 +38,11 @@
         "health": {
           "levels": [0, 0, 0, 0, 0, 0, 0],
           "penalty": 0,
+          "total": {
+            "value": 0,
+            "max": 0,
+            "label": "Total HP"
+          },
           "locations": {
             "head": { "value": 10, "max": 10, "label": "Head" },
             "chest": { "value": 20, "max": 20, "label": "Chest" },
