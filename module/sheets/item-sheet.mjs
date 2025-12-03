@@ -71,29 +71,41 @@ export class CWItemSheet extends HandlebarsApplicationMixin(DocumentSheetV2) {
   
   // Process the form data to convert the "coverage.head" checkbox object 
   // into the "system.coverage" array that the database expects.
-  _processFormData(event, form, formData) {
-    const data = super._processFormData(event, form, formData);
+    _processFormData(event, form, formData) {
+        const data = super._processFormData(event, form, formData);
 
-    if (this.document.type === "armor") {
-        // 1. data.coverage will look like { head: true, chest: false, ... }
-        // We iterate over it to collect the 'true' keys.
-        const coverage = [];
-        if (data.coverage) {
-            for (const [key, isChecked] of Object.entries(data.coverage)) {
-                if (isChecked) {
-                    coverage.push(key);
+        if (this.document.type === "armor") {
+            // 1. Get the raw value from our temporary field
+            // It might be nested in 'temp' object depending on how FormData parses "temp.coverage"
+            // Usually FormDataExtended flattens it, but let's check properly.
+            let rawCoverage = data["temp.coverage"]; 
+            
+            // If the parser didn't flatten "temp.coverage", check if it's inside an object
+            if (data.temp && data.temp.coverage) {
+                rawCoverage = data.temp.coverage;
+            }
+
+            // 2. Normalize to Array
+            let coverage = [];
+            if (rawCoverage) {
+                if (Array.isArray(rawCoverage)) {
+                    coverage = rawCoverage;
+                } else {
+                    // Single string value
+                    coverage = [rawCoverage];
                 }
             }
-            
-            // 2. Set the actual system property
+
+            // 3. Set the actual system property
             data["system.coverage"] = coverage;
-            
-            // 3. Clean up the temporary object so it doesn't get saved as junk data
-            delete data.coverage;
+
+            // 4. Cleanup junk data so it doesn't try to write to the DB
+            delete data["temp.coverage"];
+            if (data.temp) delete data.temp;
         }
-    }
-    return data;
-  }
+        
+        return data;
+      }
   static async _onRollWeapon(event, target) {
     const item = this.document.items.get(target.dataset.id);
     

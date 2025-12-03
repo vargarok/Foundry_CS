@@ -110,17 +110,18 @@
               <input type="checkbox" name="system.equipped" {{checked system.equipped}}/>
           </div>
       </div>
-      <div class="form-group">
-          <label>Coverage</label>
-          <div class="coverage-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
-              {{#each coverage}}
-              <label class="checkbox">
-                  <input type="checkbox" name="coverage.{{this.key}}" {{checked this.checked}}/>
-                  {{this.label}}
-              </label>
-              {{/each}}
-          </div>
-      </div>
+            <div class="form-group">
+                <label>Coverage</label>
+                <div class="coverage-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
+                    {{#each coverage}}
+                    <label class="checkbox">
+                        {{!-- CHANGE: Name is now "temp.coverage", Value is the key --}}
+                        <input type="checkbox" name="temp.coverage" value="{{this.key}}" {{checked this.checked}}/>
+                        {{this.label}}
+                    </label>
+                    {{/each}}
+                </div>
+            </div>
       {{/if}}
 
       {{!-- Cybernetic Specifics --}}

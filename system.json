@@ -15,9 +15,5 @@
       "name": "English",
       "path": "lang/en.json"
     }
-  ],
-  "documentTypes": {
-    "Actor": ["character", "npc"],
-    "Item": ["gear", "weapon", "armor", "trait", "cybernetic"]
-  }
+  ]
 }
