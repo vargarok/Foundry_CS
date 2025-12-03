@@ -508,3 +508,37 @@
   grid-template-columns: 30px 4fr 1fr 1fr 60px;
   gap: 5px;
 }
+.health-box {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--cw-border);
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-weight: bold;
+    font-family: monospace; /* Helps the X and / align better */
+    color: var(--cw-text);
+    user-select: none;
+}
+
+.health-box:hover {
+    border-color: var(--cw-accent);
+    box-shadow: 0 0 5px var(--cw-accent);
+}
+
+/* Specific States */
+.health-box.bashing {
+    color: #ffff00; /* Yellow for Bashing */
+}
+
+.health-box.lethal {
+    color: #ff8800; /* Orange for Lethal */
+}
+
+.health-box.aggravated {
+    background: #550000; /* Dark red background */
+    color: #ff0000;      /* Red star/icon */
+    border-color: #ff0000;
+}

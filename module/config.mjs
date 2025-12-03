@@ -134,3 +134,10 @@ CW.gravityTypes = {
   "Normal": "Normal",
   "High": "High"
 };
+
+CW.healthStates = {
+  0: "None",
+  1: "Bashing",
+  2: "Lethal",
+  3: "Aggravated"
+};

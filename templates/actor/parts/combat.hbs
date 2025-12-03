@@ -9,10 +9,17 @@
                 <div class="health-track">
                     {{#each healthConfig as |level|}}
                     <div class="health-row">
-                        <label class="{{#if level.checked}}active{{/if}}">
+                        <label class="{{#if (gt level.state 0)}}active{{/if}}">
                             {{level.label}} ({{level.penalty}})
                         </label>
-                        <input type="checkbox" name="system.health.levels.{{level.index}}" {{checked level.checked}} value="1">
+                        
+                        {{!-- Custom Clickable Box --}}
+                        <a class="health-box {{level.cssClass}}" 
+                        data-action="toggleHealth" 
+                        data-index="{{level.index}}"
+                        title="Click to cycle damage type">
+                        {{{level.icon}}}
+                        </a>
                     </div>
                     {{/each}}
                 </div>

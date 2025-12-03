@@ -23,7 +23,8 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       editEffect: this._onEditEffect,
       deleteEffect: this._onDeleteEffect,
       toggleEffect: this._onToggleEffect,
-      useItem: this._onUseItem
+      useItem: this._onUseItem,
+      toggleHealth: this._onToggleHealth
     }
   };
 
@@ -93,14 +94,30 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             return acc;
         }, {});
 
-    // 4. Health Config
+// 4. Health Config (UPDATED)
     const healthLevels = system.health.levels || [0,0,0,0,0,0,0];
+    const damageClasses = {
+        0: "",
+        1: "bashing",
+        2: "lethal",
+        3: "aggravated"
+    };
+    const damageIcons = {
+        0: "",
+        1: "/",
+        2: "X",
+        3: '<i class="fas fa-star"></i>' // or a filled box
+    };
+
     context.healthConfig = CONFIG.CW.healthLevels.map((l, i) => {
+        const state = healthLevels[i] || 0;
         return {
             label: l.label,
             penalty: l.penalty,
             index: i,
-            checked: healthLevels[i] > 0
+            state: state,
+            cssClass: damageClasses[state],
+            icon: damageIcons[state]
         };
     });
 
@@ -295,22 +312,22 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         origin: this.document.uuid,
         disabled: false
     }, { parent: this.document });
-}
+  }
 
   static async _onEditEffect(event, target) {
     const effect = this.document.effects.get(target.closest(".item-row").dataset.effectId);
     return effect.sheet.render(true);
-}
+  }
 
   static async _onDeleteEffect(event, target) {
     const effect = this.document.effects.get(target.closest(".item-row").dataset.effectId);
     return effect.delete();
-}
+  }
 
   static async _onToggleEffect(event, target) {
     const effect = this.document.effects.get(target.closest(".item-row").dataset.effectId);
     return effect.update({ disabled: !effect.disabled });
-}
+  }
   static async _onUseItem(event, target) {
     const item = this.document.items.get(target.dataset.id);
     if (!item) return;
@@ -343,5 +360,19 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     } else {
         await item.delete();
     }
+  }
+  static async _onToggleHealth(event, target) {
+    event.preventDefault();
+    const index = parseInt(target.dataset.index);
+    const levels = this.document.system.health.levels;
+    
+    // Get current value (default to 0)
+    const current = levels[index] || 0;
+    
+    // Cycle: 0 -> 1 -> 2 -> 3 -> 0
+    const next = (current + 1) > 3 ? 0 : current + 1;
+
+    // Create the update path dynamically
+    await this.document.update({[`system.health.levels.${index}`]: next});
   }
 }
