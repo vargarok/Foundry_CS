@@ -71,29 +71,35 @@ export class CWItemSheet extends HandlebarsApplicationMixin(DocumentSheetV2) {
   
 
     // Robustly handle form data by reading the temporary map
-  _processFormData(event, form, formData) {
-    const data = super._processFormData(event, form, formData);
+      _processFormData(event, form, formData) {
+        const data = super._processFormData(event, form, formData);
 
-    if (this.document.type === "armor") {
-        // 1. Locate the coverage map in the expanded data
-        // It should look like: data.temp.coverageMap = { head: true, chest: true }
-        const map = data.temp?.coverageMap || {};
+        // 1. Expand the flattened data to handle nested properties (like temp.coverageMap)
+        const expanded = foundry.utils.expandObject(data);
+
+        if (this.document.type === "armor") {
+            // 2. Locate the coverage map in the expanded data
+            const map = expanded.temp?.coverageMap || {};
+            
+            // 3. Convert "true" keys into our array
+            const newCoverage = Object.entries(map)
+                .filter(([key, value]) => value === true) // Keep only checked items
+                .map(([key, value]) => key);              // Keep only the key name
+
+            // 4. Save to the actual system property
+            // We ensure 'system' exists in our expanded object just in case, though it usually does
+            if (!expanded.system) expanded.system = {};
+            expanded.system.coverage = newCoverage;
+
+            // 5. Cleanup temporary data so it doesn't try to save to the document
+            delete expanded.temp;
+        }
         
-        // 2. Convert "true" keys into our array
-        const newCoverage = Object.entries(map)
-            .filter(([key, value]) => value === true) // Keep only checked items
-            .map(([key, value]) => key);              // Keep only the key name
+        // Return the modified expanded object. 
+        // The Actor/Item update method handles nested objects perfectly fine.
+        return expanded;
+      }
 
-        // 3. Save to the actual system property
-        data["system.coverage"] = newCoverage;
-
-        // 4. Cleanup temporary data
-        delete data.temp;
-    }
-    
-    return data;
-  }
-  
   static async _onRollWeapon(event, target) {
     const item = this.document.items.get(target.dataset.id);
     
