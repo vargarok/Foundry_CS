@@ -69,43 +69,31 @@ export class CWItemSheet extends HandlebarsApplicationMixin(DocumentSheetV2) {
     return context;
   }
   
-  // Process the form data to convert the "coverage.head" checkbox object 
-  // into the "system.coverage" array that the database expects.
-    _processFormData(event, form, formData) {
-        const data = super._processFormData(event, form, formData);
 
-        if (this.document.type === "armor") {
-            // 1. Get the raw value from our temporary field
-            // It might be nested in 'temp' object depending on how FormData parses "temp.coverage"
-            // Usually FormDataExtended flattens it, but let's check properly.
-            let rawCoverage = data["temp.coverage"]; 
-            
-            // If the parser didn't flatten "temp.coverage", check if it's inside an object
-            if (data.temp && data.temp.coverage) {
-                rawCoverage = data.temp.coverage;
-            }
+    // Robustly handle form data by reading the temporary map
+  _processFormData(event, form, formData) {
+    const data = super._processFormData(event, form, formData);
 
-            // 2. Normalize to Array
-            let coverage = [];
-            if (rawCoverage) {
-                if (Array.isArray(rawCoverage)) {
-                    coverage = rawCoverage;
-                } else {
-                    // Single string value
-                    coverage = [rawCoverage];
-                }
-            }
-
-            // 3. Set the actual system property
-            data["system.coverage"] = coverage;
-
-            // 4. Cleanup junk data so it doesn't try to write to the DB
-            delete data["temp.coverage"];
-            if (data.temp) delete data.temp;
-        }
+    if (this.document.type === "armor") {
+        // 1. Locate the coverage map in the expanded data
+        // It should look like: data.temp.coverageMap = { head: true, chest: true }
+        const map = data.temp?.coverageMap || {};
         
-        return data;
-      }
+        // 2. Convert "true" keys into our array
+        const newCoverage = Object.entries(map)
+            .filter(([key, value]) => value === true) // Keep only checked items
+            .map(([key, value]) => key);              // Keep only the key name
+
+        // 3. Save to the actual system property
+        data["system.coverage"] = newCoverage;
+
+        // 4. Cleanup temporary data
+        delete data.temp;
+    }
+    
+    return data;
+  }
+  
   static async _onRollWeapon(event, target) {
     const item = this.document.items.get(target.dataset.id);
     

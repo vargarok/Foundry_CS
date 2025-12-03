@@ -104,34 +104,29 @@ export class CWActor extends Actor {
     }
     system.health.penalty = penalty;
 
-    // --- 8. Calculate Armor Soak per Location (NEW) ---
-    // Ensure locations object exists (handles old actors gracefully)
+    // --- 8. Calculate Armor Soak per Location ---
     if (system.health.locations) {
         
-        // 1. Reset all armor values to 0
+        // Reset armor to 0
         for (const loc of Object.values(system.health.locations)) {
             loc.armor = 0;
         }
 
-        // 2. Loop through Equipped Armor items
+        // Loop Armor
         for (const item of this.items) {
-            if (item.type === "armor" && item.system.equipped) {
-                const soak = item.system.soak || 0;
+            // Check TYPE, EQUIPPED status, and Coverage ARRAY
+            if (item.type === "armor" && item.system.equipped && item.system.coverage) {
+                const soak = Number(item.system.soak) || 0;
                 
-                // 3. Add soak to covered locations
-                // The item stores coverage as an array of keys: ['head', 'chest']
-                if (item.system.coverage) {
-                    for (const locKey of item.system.coverage) {
-                        if (system.health.locations[locKey]) {
-                            system.health.locations[locKey].armor += soak;
-                        }
+                // Add soak to each covered location
+                for (const locKey of item.system.coverage) {
+                    if (system.health.locations[locKey]) {
+                        system.health.locations[locKey].armor += soak;
                     }
                 }
             }
         }
-    }
-  
-    
+      }
   }
 
   _getGravityMods(home, here) {

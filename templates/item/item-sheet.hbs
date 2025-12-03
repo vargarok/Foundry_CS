@@ -115,8 +115,8 @@
                 <div class="coverage-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
                     {{#each coverage}}
                     <label class="checkbox">
-                        {{!-- CHANGE: Name is now "temp.coverage", Value is the key --}}
-                        <input type="checkbox" name="temp.coverage" value="{{this.key}}" {{checked this.checked}}/>
+                        {{!-- CHANGE: Use unique names: temp.coverageMap.head, temp.coverageMap.chest, etc. --}}
+                        <input type="checkbox" name="temp.coverageMap.{{this.key}}" {{checked this.checked}}/>
                         {{this.label}}
                     </label>
                     {{/each}}
