@@ -489,16 +489,15 @@
     margin-bottom: 2px;
 }
 
-/* --- ADJUSTED POSITIONS --- */
-/* Center Column: Shifted to 43% to center the narrower box */
-.loc-head    { top: 4%;  left: 43%; }
-.loc-chest   { top: 22%; left: 43%; }
-.loc-stomach { top: 40%; left: 43%; }
+/* Center Column */
+.loc-head { top: 5%; left: 42%; }
+.loc-chest { top: 20%; left: 42%; }
+.loc-stomach { top: 35%; left: 42%; }
 
-/* Arms: Pushed further in (20%) to hit the biceps */
-.loc-rarm    { top: 28%; left: 20%; }
-.loc-larm    { top: 28%; right: 20%; }
+/* Arms */
+.loc-rarm    { top: 30%; left: 22%; }
+.loc-larm    { top: 30%; right: 22%; }
 
-/* Legs: Pushed further in (38%) to hit the thighs */
-.loc-rleg    { top: 55%; left: 38%; }
-.loc-lleg    { top: 55%; right: 38%; }
+/* Legs */
+.loc-rleg    { top: 65%; left: 25%; }
+.loc-lleg    { top: 65%; right: 25%; }
