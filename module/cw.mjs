@@ -29,6 +29,9 @@ Hooks.once("init", function() {
     // We slice off the last argument which is the Handlebars options object
     return Array.prototype.slice.call(arguments, 0, -1);
   });
+  Handlebars.registerHelper('multiply', function(a, b) {
+      return Number(a) * Number(b);
+  });
 
   // Register Sheets (V13 Strict Mode)
   foundry.documents.collections.Actors.unregisterSheet("core", foundry.appv1.sheets.ActorSheet);
