@@ -443,7 +443,7 @@
 .body-chart-container {
     position: relative;
     width: 300px;  /* Adjust based on your image width */
-    height: 600px; /* Adjust based on your image height */
+    height: 500px; /* Adjust based on your image height */
     margin: 0 auto;
     background: rgba(0,0,0,0.1); /* Fallback */
     border-radius: 8px;
