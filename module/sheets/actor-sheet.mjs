@@ -24,6 +24,7 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       deleteEffect: this._onDeleteEffect,
       toggleEffect: this._onToggleEffect,
       useItem: this._onUseItem,
+      editImage: this._onEditImage,
       toggleHealth: this._onToggleHealth
     }
   };
@@ -206,6 +207,22 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     context.effects = effects;
 
     return context;
+  }
+
+  static async _onEditImage(event, target) {
+    const attr = target.dataset.edit;
+    const current = foundry.utils.getProperty(this.document, attr);
+    
+    const fp = new FilePicker({
+        type: "image",
+        current: current,
+        callback: path => {
+            this.document.update({[attr]: path});
+        },
+        top: this.position.top + 40,
+        left: this.position.left + 10
+    });
+    return fp.browse();
   }
 
   static async _onChangeTab(event, target) {

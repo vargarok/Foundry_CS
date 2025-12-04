@@ -12,6 +12,7 @@ export class CWItemSheet extends HandlebarsApplicationMixin(DocumentSheetV2) {
         createEffect: this._onCreateEffect,
         editEffect: this._onEditEffect,
         deleteEffect: this._onDeleteEffect,
+        editImage: this._onEditImage,
         toggleEffect: this._onToggleEffect
     }
   };
@@ -144,4 +145,23 @@ export class CWItemSheet extends HandlebarsApplicationMixin(DocumentSheetV2) {
       const effect = this.document.effects.get(target.closest(".item-row").dataset.effectId);
       return effect.update({ disabled: !effect.disabled });
   }
-}
+
+  static async _onEditImage(event, target) {
+    const attr = target.dataset.edit;
+    const current = foundry.utils.getProperty(this.document, attr);
+    
+    const fp = new FilePicker({
+        type: "image",
+        current: current,
+        callback: path => {
+            this.document.update({[attr]: path});
+        },
+        top: this.position.top + 40,
+        left: this.position.left + 10
+    });
+    return fp.browse();
+  }
+}  
+
+
+

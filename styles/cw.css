@@ -542,3 +542,14 @@
     color: #ff0000;      /* Red star/icon */
     border-color: #ff0000;
 }
+
+img[data-action="editImage"] {
+    cursor: pointer;
+    border: 1px solid var(--cw-border);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+img[data-action="editImage"]:hover {
+    border-color: var(--cw-accent);
+    box-shadow: 0 0 8px var(--cw-accent);
+}
