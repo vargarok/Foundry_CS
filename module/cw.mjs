@@ -49,8 +49,7 @@ Hooks.once("init", function() {
     label: "Colonial Weather Item"
   });
 
-  Hooks.on("renderActiveEffectConfig", (app, html, data) => {
-    // Robustly get the raw DOM element whether it's jQuery or HTMLElement
+Hooks.on("renderActiveEffectConfig", (app, html, data) => {
     const root = html instanceof HTMLElement ? html : (html[0] || html);
     
     // 1. Create the Datalist
@@ -61,27 +60,39 @@ Hooks.once("init", function() {
         datalist = document.createElement("datalist");
         datalist.id = datalistId;
         
-        // Populate options from CONFIG.CW.effectOptions
-        // Ensure CW.effectOptions exists in your config.mjs!
-        if (CONFIG.CW.effectOptions) {
-            for (const [key, label] of Object.entries(CONFIG.CW.effectOptions)) {
-                const option = document.createElement("option");
-                option.value = key;
-                option.label = label;
-                datalist.appendChild(option);
+        const config = CONFIG.CW.effectOptions;
+
+        if (config) {
+            // Loop through each Category (Attributes, Skills, etc.)
+            for (const category of Object.values(config)) {
+                
+                // A. Add a "Header" option (Visual separator)
+                // We use a dummy value so it doesn't break things if selected by accident
+                if (category.label) {
+                    const header = document.createElement("option");
+                    header.value = ""; 
+                    header.label = category.label; 
+                    header.disabled = true; // Hints to browser not to select it
+                    datalist.appendChild(header);
+                }
+
+                // B. Add the actual items
+                for (const [key, label] of Object.entries(category.items)) {
+                    const option = document.createElement("option");
+                    option.value = key;
+                    option.label = label;
+                    datalist.appendChild(option);
+                }
             }
         }
         root.append(datalist);
     }
 
-    // 2. Attach to all "Change Key" inputs
-    // Looks for inputs named "changes.0.key", "changes.1.key", etc.
+    // 2. Attach to inputs (Same as before)
     const inputs = root.querySelectorAll('input[name^="changes"][name$="key"]');
-    
     inputs.forEach(input => {
         input.setAttribute("list", datalistId);
-        input.placeholder = "Select or Type...";
-        // Optional: Force it to autocomplete off so the browser doesn't hide our datalist
+        input.placeholder = "Select Attribute...";
         input.setAttribute("autocomplete", "off");
     });
 });

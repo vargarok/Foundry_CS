@@ -108,24 +108,80 @@ CW.armorLocations = {
 };
 
 CW.effectOptions = {
-    // Attributes
-    "system.attributes.str.value": "Strength",
-    "system.attributes.dex.value": "Dexterity",
-    "system.attributes.sta.value": "Stamina",
-    "system.attributes.cha.value": "Charisma",
-    "system.attributes.soc.value": "Social",
-    "system.attributes.app.value": "Appearance",
-    "system.attributes.int.value": "Intelligence",
-    "system.attributes.edu.value": "Education",
-    "system.attributes.wit.value": "Wits",
+      attributes: {
+        label: "--- ATTRIBUTES ---",
+        items: {
+            "system.attributes.str.value": "Strength",
+            "system.attributes.dex.value": "Dexterity",
+            "system.attributes.sta.value": "Stamina",
+            "system.attributes.cha.value": "Charisma",
+            "system.attributes.soc.value": "Social",
+            "system.attributes.app.value": "Appearance",
+            "system.attributes.int.value": "Intelligence",
+            "system.attributes.edu.value": "Education",
+            "system.attributes.wit.value": "Wits"
+        }
+      },
     
-    // Derived (Be careful with these, usually better to edit underlying attr)
-    "system.derived.initiative": "Initiative",
-    "system.derived.moveWalk": "Walk Speed",
-    
-    // Skills (Example of how to add them)
-    "system.skills.firearms.value": "Skill: Firearms",
-    "system.skills.athletics.value": "Skill: Athletics"
+      derived: {
+        label: "--- DERIVED STATS ---",
+        items: {
+            "system.derived.initBonus": "Initiative Bonus",
+            "system.derived.moveBonus": "Movement Bonus",
+            "system.health.bonusLevels": "Health Levels (Boxes)",
+            "system.health.total.bonus": "Total Hit Points (Bonus)"
+        }
+    },
+      combat: {
+        label: "--- COMBAT ---",
+        items: {
+            "system.health.locations.head.max": "Max HP: Head",
+            "system.health.locations.chest.max": "Max HP: Chest",
+            "system.health.locations.stomach.max": "Max HP: Stomach",
+            "system.health.locations.rArm.max": "Max HP: R-Arm",
+            "system.health.locations.lArm.max": "Max HP: L-Arm",
+            "system.health.locations.rLeg.max": "Max HP: R-Leg",
+            "system.health.locations.lLeg.max": "Max HP: L-Leg"
+        }
+    },
+      skills: {
+        label: "--- SKILLS ---",
+        items: {
+            "system.skills.athletics.value": "Athletics",
+            "system.skills.awareness.value": "Awareness",
+            "system.skills.brawl.value": "Brawl",
+            "system.skills.business.value": "Business",
+            "system.skills.computer.value": "Computer Use",
+            "system.skills.demolitions.value": "Demolitions",
+            "system.skills.disguise.value": "Disguise",
+            "system.skills.drive.value": "Drive",
+            "system.skills.empathy.value": "Empathy",
+            "system.skills.engineering.value": "Engineering",
+            "system.skills.etiquette.value": "Etiquette",
+            "system.skills.firearms.value": "Firearms",
+            "system.skills.forgery.value": "Forgery",
+            "system.skills.gambling.value": "Gambling",
+            "system.skills.gatherInfo.value": "Gather Information",
+            "system.skills.heavyWeapons.value": "Heavy Weapons",
+            "system.skills.intimidate.value": "Intimidate",
+            "system.skills.leadership.value": "Leadership",
+            "system.skills.linguistics.value": "Linguistics",
+            "system.skills.martialArts.value": "Martial Arts",
+            "system.skills.medicine.value": "Medicine",
+            "system.skills.melee.value": "Melee",
+            "system.skills.navigation.value": "Navigation",
+            "system.skills.perform.value": "Perform",
+            "system.skills.pilot.value": "Pilot",
+            "system.skills.politics.value": "Politics",
+            "system.skills.repair.value": "Repair",
+            "system.skills.security.value": "Security",
+            "system.skills.stealth.value": "Stealth",
+            "system.skills.streetwise.value": "Streetwise",
+            "system.skills.subterfuge.value": "Subterfuge",
+            "system.skills.survival.value": "Survival",
+            "system.skills.technology.value": "Technology"
+        }
+    }
 };
 
 CW.gravityTypes = {

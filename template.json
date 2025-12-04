@@ -36,11 +36,13 @@
         "skills": {},
         "backgrounds": {},
         "health": {
+          "bonusLevels": 0,
           "levels": [0, 0, 0, 0, 0, 0, 0],
           "penalty": 0,
           "total": {
             "value": null,
             "max": 0,
+            "bonus": 0,
             "label": "Total HP"
           },
           "locations": {
@@ -58,6 +60,7 @@
         "derived": {
           "initiative": 0,
           "initBonus": 0,
+          "moveBonus": 0,
           "moveWalk": 0,
           "moveRun": 0,
           "moveSprint": 0,

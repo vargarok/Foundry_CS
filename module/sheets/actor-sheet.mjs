@@ -95,7 +95,8 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         }, {});
 
 // 4. Health Config (UPDATED)
-    const healthLevels = system.health.levels || [0,0,0,0,0,0,0];
+    const healthLevels = system.health.levels || [];
+    const bonusLevels = system.health.bonusLevels || 0; // Get the bonus
     const damageClasses = {
         0: "",
         1: "bashing",
@@ -109,17 +110,40 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         3: '<i class="fas fa-star"></i>' // or a filled box
     };
 
-    context.healthConfig = CONFIG.CW.healthLevels.map((l, i) => {
+    // Calculate total levels needed (7 base + bonus)
+    // We only cycle the label if we run out of standard names
+    context.healthConfig = [];
+    
+    const standardLevels = CONFIG.CW.healthLevels;
+    const totalCount = standardLevels.length + bonusLevels;
+
+    for (let i = 0; i < totalCount; i++) {
+        // If i is within standard range, use standard data. 
+        // If it's a bonus level, copy the "Bruised" (index 0) data or "Crippled"?
+        // Usually bonus levels are "Bruised" (0 penalty).
+        
+        let label, penalty;
+        
+        if (i < standardLevels.length) {
+            label = standardLevels[i].label;
+            penalty = standardLevels[i].penalty;
+        } else {
+            // It's a bonus level! Let's call it "Bruised+"
+            label = "Bruised (Bonus)";
+            penalty = 0;
+        }
+
         const state = healthLevels[i] || 0;
-        return {
-            label: l.label,
-            penalty: l.penalty,
+        
+        context.healthConfig.push({
+            label: label,
+            penalty: penalty,
             index: i,
             state: state,
-            cssClass: damageClasses[state],
-            icon: damageIcons[state]
-        };
-    });
+            cssClass: damageClasses[state], // Ensure damageClasses is defined as before
+            icon: damageIcons[state]      // Ensure damageIcons is defined as before
+        });
+      }
 
     // 5. Prepare Inventory (Categorize Items)
     const inventory = {

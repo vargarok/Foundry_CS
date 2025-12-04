@@ -85,10 +85,14 @@ export class CWActor extends Actor {
     const effDex = system.derived.attributes.dex;
     const effWit = system.derived.attributes.wit;
 
+    // Initiative
     system.derived.initiative = effDex + effWit + (system.derived.initBonus || 0);
-    system.derived.moveWalk = 7;
-    system.derived.moveRun = effDex + 12;
-    system.derived.moveSprint = (effDex * 3) + 20;
+
+    // Movement (Now using moveBonus)
+    const moveBonus = (system.derived.moveBonus || 0);
+    system.derived.moveWalk = 7 + moveBonus;
+    system.derived.moveRun = effDex + 12 + moveBonus;
+    system.derived.moveSprint = (effDex * 3) + 20 + moveBonus;
     system.derived.throwRange = effStr * 12;
 
     // --- 7. Health Penalties ---
@@ -136,9 +140,11 @@ export class CWActor extends Actor {
             maxTotal += (loc.max || 0);
         }
         
+        // Add the Global Bonus
+        maxTotal += (system.health.total.bonus || 0);
+
         // Ensure total exists (if you just added it to template)
         if (!system.health.total) system.health.total = { value: 0, max: 0 };
-
         system.health.total.max = maxTotal;
         
         // Optional: If value is null/undefined (new actor), set it to max
