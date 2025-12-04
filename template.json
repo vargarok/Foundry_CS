@@ -72,7 +72,7 @@
     "npc": { "templates": ["base"] }
   },
   "Item": {
-    "types": ["gear", "weapon", "armor", "trait", "cybernetic"],
+    "types": ["gear", "weapon", "armor", "trait", "cybernetic", "background"],
     "templates": {
       "base": {
         "description": "",
@@ -115,6 +115,10 @@
       "templates": ["base"],
       "type": "merit",
       "cost": 1
-    }
+    },
+    "background": {
+      "templates": ["base"],
+      "cost": 1
+}
   }
 }

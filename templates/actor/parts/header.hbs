@@ -22,5 +22,21 @@
         </select>
       </div>
     </div>
+    <div class="row">
+      <label>XP (Total / Unspent)</label>
+      <div class="flexrow" style="align-items: center; gap: 5px;">
+        
+        {{!-- Total XP (Editable by GM/Player) --}}
+        <input name="system.experience.total" type="number" value="{{system.experience.total}}" placeholder="0" style="text-align: center;" title="Total Earned XP"/>
+        
+        <span style="flex: 0 0 auto;">/</span>
+        
+        {{!-- Unspent XP (Calculated Read-Only) --}}
+        {{!-- We color it red if negative to warn the player they overspent --}}
+        <span title="Unspent XP" style="font-weight: bold; font-size: 1.1em; {{#if (lt system.experience.unspent 0)}}color:var(--cw-fail);{{else}}color:var(--cw-success);{{/if}}">
+            {{system.experience.unspent}}
+        </span>
+      </div>
+    </div>
   </div>
 </header>

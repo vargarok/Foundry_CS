@@ -146,7 +146,8 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       armor: [],
       gear: [],
       cybernetics: [],
-      traits: []
+      traits: [],
+      backgrounds: []
     };
 
     // Loop through all items on the actor and sort them
@@ -155,6 +156,7 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       else if (i.type === "armor") inventory.armor.push(i);
       else if (i.type === "cybernetic") inventory.cybernetics.push(i);
       else if (i.type === "trait") inventory.traits.push(i);
+      else if (i.type === "background") inventory.backgrounds.push(i);
       else inventory.gear.push(i); // Fallback for any other type
     }
     

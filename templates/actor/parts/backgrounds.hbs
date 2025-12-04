@@ -1,14 +1,54 @@
 <div class="tab-content {{#if (eq activeTab 'backgrounds')}}active{{/if}}">
-  <div class="skills-list">
-    {{#each system.backgrounds as |bg key|}}
-    <div class="skill-item">
-      <div class="skill-name">
-        <span>{{bg.label}}</span>
-      </div>
-      <div class="skill-controls">
-        <input type="number" name="system.backgrounds.{{key}}.value" value="{{bg.value}}" min="0" max="5"/>
-      </div>
+    
+    <div class="panel">
+        <h3>Backgrounds <a data-action="createItem" data-type="background"><i class="fa-solid fa-plus"></i></a></h3>
+        
+        <div class="item-list">
+            <div class="header-row">
+                <span></span>
+                <span>Background Name</span>
+                <span class="center-text">Dots</span>
+                <span></span>
+            </div>
+
+            {{#each inventory.backgrounds as |item|}}
+            <div class="item-row" data-item-id="{{item.id}}">
+                <div class="item-image">
+                    <img src="{{item.img}}" data-edit="img" width="24" height="24"/>
+                </div>
+                
+                {{!-- Editable Name --}}
+                <div class="item-name">
+                    <b>{{item.name}}</b>
+                </div>
+
+                {{!-- Dots Input --}}
+                {{!-- We edit the item's 'cost' or 'value' field directly --}}
+                <div class="center-text">
+                    <input type="number" 
+                           class="item-prop-edit" 
+                           data-path="system.cost" 
+                           value="{{item.system.cost}}" 
+                           min="0" max="5" 
+                           style="width: 30px; text-align: center;"/>
+                </div>
+
+                <div class="item-controls">
+                    <a data-action="editItem" data-id="{{item.id}}"><i class="fa-solid fa-edit"></i></a>
+                    <a data-action="deleteItem" data-id="{{item.id}}"><i class="fa-solid fa-trash"></i></a>
+                </div>
+            </div>
+            {{/each}}
+        </div>
     </div>
-    {{/each}}
-  </div>
+
+    {{!-- Optional: Leave a text area for "Contacts & Networking" notes --}}
+    <div class="panel" style="margin-top: 10px;">
+        <h3>Contacts & Connections</h3>
+        <div class="editor-container">
+            <prose-mirror name="system.bio.contacts" value="{{system.bio.contacts}}">
+                {{{system.bio.contacts}}}
+            </prose-mirror>
+        </div>
+    </div>
 </div>

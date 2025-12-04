@@ -152,6 +152,37 @@ export class CWActor extends Actor {
             system.health.total.value = maxTotal;
         }
     }
+    // --- XP / Point Calculation ---
+    let xpSpent = 0;
+    let freebiesSpent = 0;
+    
+    // 1. Calculate Attributes Cost
+    // (Logic: Sum all dots. Subtract 1 (free dot). Multiply by cost)
+    for (const attr of Object.values(this.system.attributes)) {
+        // Simple logic: Cost is 5 per dot (example)
+        xpSpent += (attr.value - 1) * 5; 
+    }
+
+    // 2. Calculate Skills Cost
+    for (const skill of Object.values(this.system.skills)) {
+        xpSpent += skill.value * 2; // Example cost
+    }
+
+    // 3. Calculate Backgrounds/Merits (Items)
+    for (const item of this.items) {
+        if (item.type === "background") {
+            xpSpent += item.system.cost; // 1 pt per dot?
+        }
+        if (item.type === "trait") {
+            // Merits cost freebies, Flaws give freebies
+            // You'll need logic to distinguish
+        }
+    }
+
+    this.system.experience.spent = xpSpent;
+    this.system.experience.unspent = this.system.experience.total - xpSpent;
+
+    
   }
 
   _getGravityMods(home, here) {
