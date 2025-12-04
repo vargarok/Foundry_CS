@@ -20,7 +20,19 @@
           "handedness": "",
           "merits": "",
           "flaws": "",
-          "notes": ""
+          "notes": ""   
+        },
+        "details": {
+          "biography": "",
+          "species": "Human",
+          "archetype": ""
+        },
+        "development": {
+          "isCreation": true,
+          "attributes": { "physical": 0, "social": 0, "mental": 0 },
+          "skills": 0,
+          "backgrounds": 0,
+          "freebies": { "spent": 0, "gained": 0 }
         },
         "attributes": {
           "str": { "value": 1, "label": "CW.AttrStr" },
@@ -119,6 +131,11 @@
     "background": {
       "templates": ["base"],
       "cost": 1
-}
+    },
+    "experience": {
+    "total": 0,
+    "spent": 0,
+    "unspent": 0
+    }
   }
 }

@@ -208,7 +208,51 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     
     context.effects = effects;
 
+    // Check Creation Budgets
+        if (this.document.system.development.isCreation) {
+            context.budget = {
+                physical: { 
+                    value: this.document.system.development.attributes.physical, 
+                    max: 7, 
+                    label: "Physical (7)" 
+                },
+                social: { 
+                    value: this.document.system.development.attributes.social, 
+                    max: 5, 
+                    label: "Social (5)" 
+                },
+                mental: { 
+                    value: this.document.system.development.attributes.mental, 
+                    max: 3, 
+                    label: "Mental (3)" 
+                },
+                skills: {
+                    value: this.document.system.development.skills,
+                    max: 23,
+                    label: "Skills (23)"
+                },
+                freebies: {
+                    value: this.document.system.development.freebies.remaining,
+                    label: "Freebies"
+                }
+            };
+        }
+
     return context;
+  }
+
+  // Add an action to toggle creation mode
+  static async _onToggleCreationMode(event, target) {
+    const actor = this.document;
+    const current = actor.system.development.isCreation;
+    await actor.update({"system.development.isCreation": !current});
+  }
+
+  static async _onSpendXP(event, target) {
+      const type = target.dataset.type;
+      const key = target.dataset.key;
+      // You might want to add a Dialog.confirm here asking "Spend X XP?"
+      await this.document.spendXP(type, key);
   }
 
   static async _onEditImage(event, target) {

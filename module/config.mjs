@@ -197,3 +197,25 @@ CW.healthStates = {
   2: "Lethal",
   3: "Aggravated"
 };
+
+CW.creationLimits = {
+    attributes: 15, // 7/5/3 simplified to a pool for now
+    skills: 23,
+    backgrounds: 7,
+    freebies: 15
+};
+
+CW.freebieCosts = {
+    attribute: 5,
+    skill: 2,
+    background: 1,
+    willpower: 1,
+    specialized: 1
+};
+
+CW.xpCosts = {
+    newSkill: 3,
+    raiseSkill: 2, // x current level
+    raiseAttribute: 5, // x current level (Adjust based on your PDF preference)
+    newWillpower: 1 // x current level
+};

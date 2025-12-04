@@ -182,7 +182,66 @@ export class CWActor extends Actor {
     this.system.experience.spent = xpSpent;
     this.system.experience.unspent = this.system.experience.total - xpSpent;
 
-    
+
+  }
+
+  _calculateCreationPoints(system) {
+      // 1. attributes (Cost: 1 per dot over 1)
+      const attrUsage = { physical: 0, social: 0, mental: 0 };
+      
+      for (const [key, attr] of Object.entries(system.attributes)) {
+          const group = this._getAttributeGroup(key); // Helper needed
+          if (group) {
+              // Subtract 1 because everyone starts with 1 dot for free
+              attrUsage[group] += Math.max(0, attr.value - 1);
+          }
+      }
+      system.development.attributes = attrUsage;
+
+      // 2. Skills (Cost: 1 per dot)
+      let skillCost = 0;
+      for (const skill of Object.values(system.skills)) {
+          skillCost += skill.value;
+          // Specialized costs handled in Freebies usually, or separate pool
+      }
+      system.development.skills = skillCost;
+
+      // 3. Backgrounds (From Items)
+      let bgCost = 0;
+      for (const item of this.items) {
+          if (item.type === "background") {
+              bgCost += (item.system.cost || 0);
+          }
+      }
+      system.development.backgrounds = bgCost;
+
+      // 4. Merits/Flaws (Freebie Math)
+      let meritCost = 0;
+      let flawBonus = 0;
+      for (const item of this.items) {
+          if (item.type === "trait") {
+              const cost = item.system.cost || 0;
+              if (item.system.type === "merit") meritCost += cost;
+              else if (item.system.type === "flaw") flawBonus += cost;
+          }
+      }
+      
+      // Calculate remaining Freebies
+      // Start with 15, Add Flaw Bonus (Max 7 usually), Subtract Merits
+      // You can add logic here to deduct "Overspent" attributes from freebies if you wish
+      const maxFlawBonus = 7; // Cap returned points from flaws
+      const actualFlawBonus = Math.min(flawBonus, maxFlawBonus);
+      
+      system.development.freebies.spent = meritCost;
+      system.development.freebies.gained = actualFlawBonus;
+      system.development.freebies.remaining = 15 + actualFlawBonus - meritCost;
+  }
+
+  _getAttributeGroup(key) {
+      if (CONFIG.CW.attributes.physical.includes(key)) return "physical";
+      if (CONFIG.CW.attributes.social.includes(key)) return "social";
+      if (CONFIG.CW.attributes.mental.includes(key)) return "mental";
+      return null;
   }
 
   _getGravityMods(home, here) {
@@ -246,6 +305,10 @@ getCombatant() {
        pool += woundPen;
     }
 
+    if (system.development.isCreation) {
+        this._calculateCreationPoints(system);
+    }
+
     pool = Math.max(0, pool);
     
     if (pool === 0) {
@@ -277,5 +340,46 @@ getCombatant() {
       content,
       rolls: [roll]
     });
+  }
+
+  /**
+   * Spend XP to raise a trait
+   * @param {string} type  'attribute', 'skill', 'willpower'
+   * @param {string} key   The specific key (e.g., 'str', 'firearms')
+   */
+  async spendXP(type, key) {
+      const system = this.system;
+      let current = 0;
+      let cost = 0;
+      let updatePath = "";
+
+      if (type === "attribute") {
+          current = system.attributes[key].value;
+          // Storyteller Rule: New Rating x 5 (or Current x 5 depending on edition)
+          // Let's assume New Rating x 5 based on standard Sci-Fi iterations
+          cost = current * CONFIG.CW.xpCosts.raiseAttribute; 
+          updatePath = `system.attributes.${key}.value`;
+      } 
+      else if (type === "skill") {
+          current = system.skills[key].value;
+          if (current === 0) cost = CONFIG.CW.xpCosts.newSkill;
+          else cost = current * CONFIG.CW.xpCosts.raiseSkill;
+          updatePath = `system.skills.${key}.value`;
+      }
+
+      // Check affordability
+      if (system.experience.unspent < cost) {
+          ui.notifications.warn(`Not enough XP! Need ${cost}, have ${system.experience.unspent}`);
+          return;
+      }
+
+      // Execute
+      await this.update({
+          [updatePath]: current + 1,
+          "system.experience.spent": (system.experience.spent || 0) + cost
+          // Note: 'unspent' is auto-calculated in prepareDerivedData usually as (total - spent)
+      });
+      
+      ui.notifications.info(`Spent ${cost} XP to raise ${key}`);
   }
 }
