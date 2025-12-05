@@ -90,16 +90,20 @@
     },
     "weapon": {
       "templates": ["base"],
-      "damage": "1d10",
+      "damage": 4,
+      "damageBonusType": "str", 
       "type": "lethal",
       "attackBonus": 0,
-      "range": 0,
+      "range": { "short": 10, "medium": 20, "long": 40 },
       "rof": "1",
       "ammo": { "value": 0, "max": 0 },
       "ammoType": "",
       "skill": "firearms",
       "attribute": "dex",
-      "equipped": false
+      "equipped": false,
+      "strengthReq": 2, 
+      "size": "2/L",  
+      "ap": 0          
     },
     "armor": {
       "templates": ["base"],

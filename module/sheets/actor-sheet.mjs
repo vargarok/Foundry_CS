@@ -297,78 +297,51 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await item.delete();
   }
 
-  // --- UPDATED WEAPON ROLL (V13 COMPLIANT) ---
   static async _onRollWeapon(event, target) {
     event.preventDefault();
     const item = this.document.items.get(target.dataset.id);
-    const system = item.system;
+    const actorData = this.document.system;
+    
+    // 1. Calculate Strength Penalty
+    const str = actorData.derived.attributes.str;
+    const req = item.system.strengthReq || 0;
+    const strPenalty = str < req ? (req - str) : 0;
 
-    // 1. Parse ROF (Supports "1", "1/3", "1/3/10", "1/3/Auto")
-    let rofString = String(system.rof || "1");
-    let modes = rofString.split('/').map(s => {
-        const clean = s.trim().toLowerCase();
-        if (clean === "auto" || clean === "a") return "Auto";
-        return parseInt(clean) || 1;
+    // 2. Render Dialog for Modifiers
+    const content = await renderTemplate("systems/colonial-weather/templates/chat/attack-dialog.hbs", {
+        item: item,
+        modes: item.system.rof.split('/'),
+        hasAmmo: item.system.ammo.max > 0
     });
 
-    // 2. Dialog
-    const useAmmo = system.ammo.max > 0;
+    const result = await DialogV2.wait({
+        window: { title: `Attack: ${item.name}` },
+        content: content,
+        buttons: [{
+            action: "attack",
+            label: "Fire",
+            callback: (event, button, dialog) => new FormDataExtended(dialog.element.querySelector("form")).object
+        }]
+    });
+
+    if (!result) return;
+
+    // 3. Calculate Pool
+    let pool = actorData.derived.attributes[item.system.attribute] + 
+               actorData.skills[item.system.skill].value + 
+               (item.system.attackBonus || 0);
     
-    // Default values if no dialog
-    let shotCount = 1;
-    let bonus = Number(system.attackBonus) || 0;
+    // Apply Penalties
+    pool -= strPenalty;
+    if (result.range === "medium") pool -= 2;
+    if (result.range === "long") pool -= 4;
+    if (result.location === "head") pool -= 3;
+    if (result.location === "torso") pool -= 1;
 
-    if (useAmmo || modes.length > 1) {
-        // FIX: Namespaced renderTemplate
-        const content = await foundry.applications.handlebars.renderTemplate("systems/colonial-weather/templates/chat/attack-dialog.hbs", {
-            modes: modes,
-            hasAmmo: useAmmo,
-            ammo: system.ammo.value
-        });
-
-        // FIX: DialogV2 Wait
-        const result = await DialogV2.wait({
-            window: { title: `Attack: ${item.name}`, icon: "fa-solid fa-crosshairs" },
-            content: content,
-            buttons: [{
-                action: "attack",
-                label: "Attack",
-                icon: "fa-solid fa-crosshairs",
-                callback: (event, button, dialog) => {
-                    const form = dialog.element.querySelector("form");
-                    // Using FormDataExtended to grab the select value safely
-                    return new FormDataExtended(form).object;
-                }
-            }],
-            close: () => null
-        });
-
-        if (!result) return; // User closed dialog
-
-        const selectedIdx = result.mode;
-        const modeVal = modes[selectedIdx];
-        
-        // Determine Shot Count
-        if (modeVal === "Auto") shotCount = 10;
-        else shotCount = Number(modeVal);
-
-        // Ammo Check
-        if (useAmmo) {
-            if (system.ammo.value < shotCount) {
-                ui.notifications.warn(`Click-click! Not enough ammo. Need ${shotCount}, have ${system.ammo.value}.`);
-                return;
-            }
-            await item.update({"system.ammo.value": system.ammo.value - shotCount});
-        }
-
-        // Determine Bonus
-        if (shotCount === 3) bonus += 1; 
-        if (shotCount >= 10) bonus += 3;
-    }
-
-    // Execute Roll
-    this.document.rollDicePool(system.attribute, system.skill, bonus, item);
-  }
+    // 4. Roll to Hit
+    // Use your existing roll logic, but pass data for the chat card
+    this.document.rollDicePool(item.system.attribute, item.system.skill, pool - (actorData.derived.attributes[item.system.attribute] + actorData.skills[item.system.skill].value), item);
+}
 
   // --- NEW RELOAD LOGIC ---
   static async _onReloadWeapon(event, target) {
