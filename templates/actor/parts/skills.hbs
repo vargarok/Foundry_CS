@@ -14,27 +14,30 @@
       </div>
 
       <div class="skill-controls">
-    {{#if @root.system.editMode}}
-        {{!-- EDIT MODE --}}
-        <input type="number" name="system.skills.{{key}}.value" value="{{skill.value}}"/>
-    
-    {{else}}
-        {{!-- PLAY MODE --}}
-        <span style="font-weight: bold; margin-right: 5px;">{{skill.value}}</span>
+        {{#if @root.system.editMode}}
+            {{!-- EDIT MODE: Input Field (Added style to prevent layout blowout) --}}
+            <input type="number" name="system.skills.{{key}}.value" value="{{skill.value}}" style="width: 30px; text-align: center;"/>
         
-        {{#if (gt @root.system.experience.unspent 0)}}
-            <a data-action="spendXP" data-type="skill" data-key="{{key}}" title="Raise Skill">
-                <i class="fas fa-plus-circle" style="color: var(--cw-success);"></i>
-            </a>
+        {{else}}
+            {{!-- PLAY MODE: Text + XP Button --}}
+            <span style="font-weight: bold; margin-right: 5px;">{{skill.value}}</span>
+            
+            {{#if (gt @root.system.experience.unspent 0)}}
+                <a data-action="spendXP" data-type="skill" data-key="{{key}}" title="Raise Skill">
+                    <i class="fas fa-plus-circle" style="color: var(--cw-success);"></i>
+                </a>
+            {{/if}}
         {{/if}}
-    {{/if}}
 
-    {{!-- Keep Specialization Toggle available in both modes or just Edit mode? Usually both is fine --}}
-    <a class="specialized-toggle {{#if skill.specialized}}active{{/if}}" 
-       data-action="toggleSpecialized" data-key="{{key}}">
-      <i class="fa-solid fa-star"></i>
-    </a>
-</div>
+        {{!-- Specialization Toggle --}}
+        <a class="specialized-toggle {{#if skill.specialized}}active{{/if}}" 
+           data-action="toggleSpecialized" data-key="{{key}}"
+           title="Toggle Specialization">
+          <i class="fa-solid fa-star"></i>
+        </a>
+      </div>
+      
+    </div> {{!-- <--- This closing DIV was missing! --}}
     {{/each}}
   </div>
 </div>
