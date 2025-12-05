@@ -559,3 +559,10 @@ img[data-action="editImage"]:hover {
     border-color: var(--cw-accent);
     box-shadow: 0 0 8px var(--cw-accent);
 }
+
+/* Backgrounds: Icon | Name | Dots | Controls */
+.background-list .header-row,
+.background-list .item-row {
+  grid-template-columns: 30px 4fr 1fr 60px;
+  gap: 5px;
+}

@@ -1,54 +1,54 @@
 <div class="tab-content {{#if (eq activeTab 'backgrounds')}}active{{/if}}">
     
-    <div class="panel">
-        <h3>Backgrounds <a data-action="createItem" data-type="background"><i class="fa-solid fa-plus"></i></a></h3>
-        
-        <div class="item-list">
-            <div class="header-row">
-                <span></span>
-                <span>Background Name</span>
-                <span class="center-text">Dots</span>
-                <span></span>
-            </div>
-
-            {{#each inventory.backgrounds as |item|}}
-            <div class="item-row" data-item-id="{{item.id}}">
-                <div class="item-image">
-                    <img src="{{item.img}}" data-edit="img" width="24" height="24"/>
-                </div>
-                
-                {{!-- Editable Name --}}
-                <div class="item-name">
-                    <b>{{item.name}}</b>
-                </div>
-
-                {{!-- Dots Input --}}
-                {{!-- We edit the item's 'cost' or 'value' field directly --}}
-                <div class="center-text">
-                    <input type="number" 
-                           class="item-prop-edit" 
-                           data-path="system.cost" 
-                           value="{{item.system.cost}}" 
-                           min="0" max="5" 
-                           style="width: 30px; text-align: center;"/>
-                </div>
-
-                <div class="item-controls">
-                    <a data-action="editItem" data-id="{{item.id}}"><i class="fa-solid fa-edit"></i></a>
-                    <a data-action="deleteItem" data-id="{{item.id}}"><i class="fa-solid fa-trash"></i></a>
-                </div>
-            </div>
-            {{/each}}
+    {{!-- Backgrounds List (No Panel, matching Inventory style) --}}
+    <h3>Backgrounds <a data-action="createItem" data-type="background"><i class="fa-solid fa-plus"></i></a></h3>
+    
+    <div class="item-list background-list">
+        <div class="header-row">
+            <span></span>
+            <span>Background Name</span>
+            <span class="center-text">Dots</span>
+            <span></span>
         </div>
+
+        {{#each inventory.backgrounds as |item|}}
+        <div class="item-row" data-item-id="{{item.id}}">
+            <div class="item-image">
+                <img src="{{item.img}}" data-edit="img" width="24" height="24"/>
+            </div>
+            
+            {{!-- Editable Name --}}
+            <div class="item-name">
+                <input type="text" 
+                       class="item-prop-edit" 
+                       data-path="name" 
+                       value="{{item.name}}" 
+                       style="background: transparent; border: none; color: inherit; width: 100%; font-weight: bold;"/>
+            </div>
+
+            {{!-- Dots Input --}}
+            <div class="center-text">
+                <input type="number" 
+                       class="item-prop-edit" 
+                       data-path="system.cost" 
+                       value="{{item.system.cost}}" 
+                       min="0" max="10" 
+                       style="width: 40px; text-align: center;"/>
+            </div>
+
+            <div class="item-controls">
+                <a data-action="editItem" data-id="{{item.id}}"><i class="fa-solid fa-edit"></i></a>
+                <a data-action="deleteItem" data-id="{{item.id}}"><i class="fa-solid fa-trash"></i></a>
+            </div>
+        </div>
+        {{/each}}
     </div>
 
-    {{!-- Optional: Leave a text area for "Contacts & Networking" notes --}}
-    <div class="panel" style="margin-top: 10px;">
-        <h3>Contacts & Connections</h3>
-        <div class="editor-container">
-            <prose-mirror name="system.bio.contacts" value="{{system.bio.contacts}}">
-                {{{system.bio.contacts}}}
-            </prose-mirror>
-        </div>
+    {{!-- Contacts & Connections (Removed Panel wrapper to match page flow) --}}
+    <h3 style="margin-top: 15px;">Contacts & Connections</h3>
+    <div class="editor-container">
+        <prose-mirror name="system.bio.contacts" value="{{system.bio.contacts}}">
+            {{{system.bio.contacts}}}
+        </prose-mirror>
     </div>
 </div>
