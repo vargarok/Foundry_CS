@@ -20,19 +20,8 @@
           "handedness": "",
           "merits": "",
           "flaws": "",
-          "notes": ""   
-        },
-        "details": {
-          "biography": "",
-          "species": "Human",
-          "archetype": ""
-        },
-        "development": {
-          "isCreation": true,
-          "attributes": { "physical": 0, "social": 0, "mental": 0 },
-          "skills": 0,
-          "backgrounds": 0,
-          "freebies": { "spent": 0, "gained": 0 }
+          "notes": "",
+          "contacts": ""
         },
         "attributes": {
           "str": { "value": 1, "label": "CW.AttrStr" },
@@ -67,7 +56,6 @@
             "lLeg": { "value": 18, "max": 18, "label": "Left Leg" }
           }
         },
-        
         "willpower": { "value": 3, "max": 10 },
         "derived": {
           "initiative": 0,
@@ -77,7 +65,12 @@
           "moveRun": 0,
           "moveSprint": 0,
           "throwRange": 0
-        }
+        },
+        "experience": {
+          "total": 0,
+          "spent": 0
+        },
+        "editMode": true
       }
     },
     "character": { "templates": ["base"] },
@@ -120,9 +113,7 @@
       "surgeryDC": 12,
       "active": true
     },
-    "gear": { "templates": ["base"],
-    "isConsumable": false
-    },
+    "gear": { "templates": ["base"], "isConsumable": false },
     "trait": {
       "templates": ["base"],
       "type": "merit",
@@ -131,11 +122,6 @@
     "background": {
       "templates": ["base"],
       "cost": 1
-    },
-    "experience": {
-    "total": 0,
-    "spent": 0,
-    "unspent": 0
     }
   }
 }

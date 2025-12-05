@@ -6,6 +6,10 @@ export class CWActor extends Actor {
     // --- 1. Initialize Skills ---
     system.skills = system.skills || {};
 
+    const total = system.experience.total || 0;
+    const spent = system.experience.spent || 0;
+    system.experience.unspent = total - spent;
+
     for (const [key, data] of Object.entries(CONFIG.CW.skills)) {
       if (!system.skills[key]) {
         system.skills[key] = { 
@@ -179,10 +183,6 @@ export class CWActor extends Actor {
         }
     }
 
-    this.system.experience.spent = xpSpent;
-    this.system.experience.unspent = this.system.experience.total - xpSpent;
-
-
   }
 
   _calculateCreationPoints(system) {
@@ -342,44 +342,38 @@ getCombatant() {
     });
   }
 
-  /**
-   * Spend XP to raise a trait
-   * @param {string} type  'attribute', 'skill', 'willpower'
-   * @param {string} key   The specific key (e.g., 'str', 'firearms')
-   */
-  async spendXP(type, key) {
+    async spendXP(type, key) {
       const system = this.system;
-      let current = 0;
+      const xpCostMap = CONFIG.CW.xpCosts; // Ensure this exists in config.mjs
+      
+      let currentVal = 0;
       let cost = 0;
-      let updatePath = "";
+      let path = "";
 
       if (type === "attribute") {
-          current = system.attributes[key].value;
-          // Storyteller Rule: New Rating x 5 (or Current x 5 depending on edition)
-          // Let's assume New Rating x 5 based on standard Sci-Fi iterations
-          cost = current * CONFIG.CW.xpCosts.raiseAttribute; 
-          updatePath = `system.attributes.${key}.value`;
+          currentVal = system.attributes[key].value;
+          cost = currentVal * (xpCostMap.raiseAttribute || 5); // Default x5
+          path = `system.attributes.${key}.value`;
       } 
       else if (type === "skill") {
-          current = system.skills[key].value;
-          if (current === 0) cost = CONFIG.CW.xpCosts.newSkill;
-          else cost = current * CONFIG.CW.xpCosts.raiseSkill;
-          updatePath = `system.skills.${key}.value`;
+          currentVal = system.skills[key].value;
+          if (currentVal === 0) cost = (xpCostMap.newSkill || 3);
+          else cost = currentVal * (xpCostMap.raiseSkill || 2);
+          path = `system.skills.${key}.value`;
       }
 
-      // Check affordability
+      // Check if affordability
       if (system.experience.unspent < cost) {
           ui.notifications.warn(`Not enough XP! Need ${cost}, have ${system.experience.unspent}`);
           return;
       }
 
-      // Execute
+      // Update Actor
       await this.update({
-          [updatePath]: current + 1,
+          [path]: currentVal + 1,
           "system.experience.spent": (system.experience.spent || 0) + cost
-          // Note: 'unspent' is auto-calculated in prepareDerivedData usually as (total - spent)
       });
       
-      ui.notifications.info(`Spent ${cost} XP to raise ${key}`);
+      ui.notifications.info(`Spent ${cost} XP to raise ${key}.`);
   }
 }
