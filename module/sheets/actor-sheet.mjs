@@ -341,6 +341,27 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // 4. Roll to Hit
     // Use your existing roll logic, but pass data for the chat card
     this.document.rollDicePool(item.system.attribute, item.system.skill, pool - (actorData.derived.attributes[item.system.attribute] + actorData.skills[item.system.skill].value), item);
+
+    // CALCULATE DAMAGE POOL
+    // Base weapon damage + extra successes from the attack roll (common in Storyteller)
+  const damagePool = item.system.damage + (roll.total > 0 ? (roll.total - 1) : 0); 
+
+    // Create the Chat Message with the Button
+    ChatMessage.create({
+      content: `
+          <div class="cw-chat-card">
+              <h3>${item.name} Attack</h3>
+              <p><strong>Result:</strong> ${roll.total} Successes</p>
+              <button data-action="roll-damage" 
+                      data-damage="${damagePool}" 
+                      data-type="${item.system.type}">
+                  Roll Damage (${damagePool} dice)
+              </button>
+          </div>
+      `,
+      speaker: ChatMessage.getSpeaker({ actor: this.document })
+  });
+  
 }
 
   // --- NEW RELOAD LOGIC ---

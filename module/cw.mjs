@@ -97,5 +97,30 @@ Hooks.on("renderActiveEffectConfig", (app, html, data) => {
     });
 });
 
+Hooks.on("renderChatMessage", (message, html, data) => {
+    // 1. Find the "Roll Damage" button in the chat card
+    const damageButton = html.find("button[data-action='roll-damage']");
+    
+    if (damageButton.length > 0) {
+        damageButton.click(async (ev) => {
+            ev.preventDefault();
+            const button = ev.currentTarget;
+            
+            // 2. Grab data we stored on the button
+            const damageFormula = button.dataset.damage; // e.g. "4"
+            const type = button.dataset.type;            // e.g. "lethal"
+            
+            // 3. Roll the Damage
+            // (In WoD/Storyteller, damage is usually a pool of d10s vs Diff 6)
+            const roll = await new Roll(`${damageFormula}d10cs>=6`).evaluate();
+            
+            // 4. Send Result to Chat
+            await roll.toMessage({
+                flavor: `<span style="color:red; font-weight:bold">Damage Roll (${type})</span>`
+            });
+        });
+    }
+});
+
   preloadHandlebarsTemplates();
 });
