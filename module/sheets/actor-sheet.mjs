@@ -303,7 +303,7 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     const system = item.system;
     const actorData = this.document.system;
 
-    // 1. Parse ROF
+    // 1. Setup Dialog Data
     let rofString = String(system.rof || "1");
     let modes = rofString.split('/').map(s => {
         const clean = s.trim().toLowerCase();
@@ -311,12 +311,10 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         return parseInt(clean) || 1;
     });
 
-    // 2. Dialog for Range and Mode
-    const useAmmo = system.ammo.max > 0;
-    
+    // 2. Render Dialog
     const content = await foundry.applications.handlebars.renderTemplate("systems/colonial-weather/templates/chat/attack-dialog.hbs", {
         modes: modes,
-        hasAmmo: useAmmo,
+        hasAmmo: system.ammo.max > 0,
         ammo: system.ammo.value
     });
 
@@ -325,72 +323,99 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         content: content,
         buttons: [{
             action: "attack",
-            label: "Attack",
-            icon: "fa-solid fa-crosshairs",
-            callback: (event, button, dialog) => {
-                const form = dialog.element.querySelector("form");
-                return new FormDataExtended(form).object;
-            }
-        }],
-        close: () => null
+            label: "Fire",
+            callback: (event, button, dialog) => new FormDataExtended(dialog.element.querySelector("form")).object
+        }]
     });
 
     if (!result) return;
 
-    // 3. Process Logic (Ammo & Bonuses)
-    const selectedIdx = result.mode; // The index from the dropdown
+    // 3. Process Modifiers
+    const selectedIdx = result.mode;
     const modeVal = modes[selectedIdx];
     let shotCount = (modeVal === "Auto") ? 10 : Number(modeVal);
-    let bonus = Number(system.attackBonus) || 0;
+    
+    // Base Dice Pool
+    let pool = actorData.derived.attributes[system.attribute] + 
+               actorData.skills[system.skill].value + 
+               (Number(system.attackBonus) || 0);
 
-    // AMMO DEDUCTION LOGIC
-    if (useAmmo) {
+    // Modifiers
+    // A. Range
+    if (result.range === "medium") pool -= 2;
+    if (result.range === "long") pool -= 4;
+
+    // B. Strength Requirement
+    const str = actorData.derived.attributes.str;
+    const req = system.strengthReq || 0;
+    if (str < req) pool -= (req - str);
+
+    // C. Hit Location Logic
+    let hitLoc = result.location; // "random", "head", "torso", etc.
+    let locationLabel = "Torso"; // For display
+
+    if (hitLoc === "random") {
+        // Run your Randomizer Logic
+        const r = await new Roll("1d10").evaluate();
+        const map = {
+            1: "head", 2: "chest", 3: "stomach", 4: "stomach", 
+            5: "rLeg", 6: "lLeg", 7: "rLeg", 8: "lLeg", 
+            9: "rArm", 10: "lArm"
+        };
+        // Note: chest/stomach map to "torso" logic usually, but let's keep your keys
+        // If your template.json uses "chest" and "stomach", use those. 
+        // If it uses "torso", map both to "torso".
+        // Assuming your keys are: head, chest, stomach, rArm, lArm, rLeg, lLeg
+        hitLoc = map[r.total]; 
+        locationLabel = hitLoc.toUpperCase() + " (Random)";
+        // No penalty for random shots
+    } else {
+        // Called Shot Penalties
+        if (hitLoc === "head") pool -= 3;
+        else if (hitLoc === "torso" || hitLoc === "chest") pool -= 1; // "Torso" usually easier
+        else pool -= 2; // Limbs
+        locationLabel = hitLoc.toUpperCase() + " (Called)";
+    }
+
+    // 4. Handle Ammo
+    if (system.ammo.max > 0) {
         if (system.ammo.value < shotCount) {
-            ui.notifications.warn(`Click-click! Not enough ammo. Need ${shotCount}, have ${system.ammo.value}.`);
+            ui.notifications.warn("Click! Not enough ammo.");
             return;
         }
         await item.update({"system.ammo.value": system.ammo.value - shotCount});
     }
 
-    // BONUS CALCULATION
-    if (shotCount === 3) bonus += 1; 
-    if (shotCount >= 10) bonus += 3;
+    // 5. Bonus for Burst/Auto
+    if (shotCount === 3) pool += 1; 
+    if (shotCount >= 10) pool += 3;
 
-    // STRENGTH PENALTY (New!)
-    const str = actorData.derived.attributes.str;
-    const req = system.strengthReq || 0;
-    if (str < req) {
-        const pen = req - str;
-        bonus -= pen; // Reduce the pool by the difference
-    }
+    // 6. Roll Attack
+    // We pass 0 as bonus here because we calculated the full 'pool' above manually
+    // So we subtract the base attribute/skill to get just the "bonus" part for the function, 
+    // OR we just use the raw pool if your rollDicePool supports it. 
+    // Let's stick to the standard method:
+    const basePool = actorData.derived.attributes[system.attribute] + actorData.skills[system.skill].value;
+    const finalBonus = pool - basePool; 
 
-    // 4. Execute Roll
-    // We await the result because we fixed rollDicePool to return the roll!
-    const roll = await this.document.rollDicePool(system.attribute, system.skill, bonus, item);
+    const roll = await this.document.rollDicePool(system.attribute, system.skill, finalBonus, item);
 
-    // 5. Generate Damage Button (Only if we have a roll)
-    if (roll) {
-        // Calculate Damage Pool: Base Damage + Net Successes (Total - 1 for TN 7 success)
-        // Storyteller rules usually add extra successes to damage. 
-        // If 1 success is needed to hit, extra successes are (total - 1).
+    // 7. Damage Card
+    if (roll && roll.total > 0) {
         const extraSuccesses = Math.max(0, roll.total - 1);
-        const damagePool = (system.damage || 0) + extraSuccesses;
+        const damagePool = Number(system.damage || 0) + extraSuccesses; // FIX 1: Number()
 
-    // 6. Get the Location from the result (Default to torso if undefined)
-    const hitLoc = result.location || "torso";
-
-        // Create the Damage Card
         ChatMessage.create({
             content: `
                 <div class="cw-chat-card" style="border-top: 1px solid #444; margin-top: 5px; padding-top: 5px;">
                     <div style="font-size: 0.9em; margin-bottom: 5px;">
-                        Attack Hit <strong>${hitLoc.toUpperCase()}</strong>! (${roll.total} Successes)
+                        Hit <strong>${locationLabel}</strong>! (${roll.total} Successes)
                     </div>
-                    
                     <button data-action="roll-damage" 
                             data-damage="${damagePool}" 
                             data-type="${system.type}"
-                            data-location="${hitLoc}">  <i class="fas fa-skull"></i> Roll Damage (${damagePool} dice)
+                            data-location="${hitLoc}">
+                        <i class="fas fa-skull"></i> Roll Damage (${damagePool} dice)
                     </button>
                 </div>
             `,

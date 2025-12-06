@@ -4,27 +4,38 @@
         <select name="mode">
             {{#each modes as |val index|}}
             <option value="{{index}}">
-                {{!-- Logic: Auto string OR 10+ shots = Full Auto --}}
-                {{#if (or (eq val "Auto") (gte val 10))}}
-                    Full Auto ({{val}})
-                {{else}}
-                    {{#if (eq val 1)}}Single Shot (1){{else}}Burst ({{val}}){{/if}}
-                {{/if}}
+                {{#if (or (eq val "Auto") (gte val 10))}}Full Auto ({{val}}){{else}}
+                {{#if (eq val 1)}}Single Shot (1){{else}}Burst ({{val}}){{/if}}{{/if}}
             </option>
             {{/each}}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Range:</label>
+        <select name="range">
+            <option value="short">Short (No Penalty)</option>
+            <option value="medium">Medium (-2)</option>
+            <option value="long">Long (-4)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Aiming / Called Shot:</label>
+        <select name="location">
+            <option value="random">Random Location</option>
+            <option value="torso">Torso (-1)</option>
+            <option value="head">Head (-3)</option>
+            <option value="rArm">Right Arm (-2)</option>
+            <option value="lArm">Left Arm (-2)</option>
+            <option value="rLeg">Right Leg (-2)</option>
+            <option value="lLeg">Left Leg (-2)</option>
         </select>
     </div>
     
     {{#if hasAmmo}}
     <div class="form-group">
-        <label>Ammo Remaining:</label>
-        <div style="text-align: right; {{#if (eq ammo 0)}}color:red;{{/if}}">
-            {{ammo}}
-        </div>
+        <label>Ammo Remaining: {{ammo}}</label>
     </div>
     {{/if}}
-    
-    <p style="font-size: 0.9em; margin-top: 5px;">
-        Select your rate of fire. This will automatically deduct ammo.
-    </p>
 </form>
