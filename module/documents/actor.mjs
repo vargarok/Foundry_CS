@@ -340,6 +340,8 @@ getCombatant() {
       content,
       rolls: [roll]
     });
+
+    return roll;
   }
 
     async spendXP(type, key) {

@@ -46,7 +46,7 @@
       <div class="grid-2">
           <div class="form-group">
               <label>Damage Code</label>
-              <input type="text" name="system.damage" value="{{system.damage}}" placeholder="1d10"/>
+              <input type="text" name="system.damage" value="{{system.damage}}" placeholder="1"/>
           </div>
           <div class="form-group">
               <label>Damage Type</label>
@@ -64,7 +64,7 @@
           </div>
           <div class="form-group">
               <label>ROF (e.g. 1/3/10)</label>
-              <input type="text" name="system.rof" value="{{system.rof}}" placeholder="1/3/Auto"/>
+              <input type="text" name="system.rof" value="{{system.rof}}" placeholder="1/3/10"/>
           </div>
           <div class="form-group">
               <label>Ammo Type (Name of the Gear item)</label>
@@ -78,6 +78,20 @@
                   <input type="number" name="system.ammo.max" value="{{system.ammo.max}}" placeholder="0" data-dtype="Number"/>
               </div>
           </div>
+          <div class="form-group">
+            <label>Strength Req.</label>
+            <input type="number" name="system.strengthReq" value="{{system.strengthReq}}" placeholder="0"/>
+        </div>
+
+        <div class="form-group">
+            <label>Armor Piercing</label>
+            <input type="number" name="system.ap" value="{{system.ap}}" placeholder="0"/>
+        </div>
+
+        <div class="form-group">
+            <label>Size / Conceal</label>
+            <input type="text" name="system.size" value="{{system.size}}" placeholder="2/L"/>
+        </div>
           <div class="form-group">
               <label>Skill</label>
               <select name="system.skill">

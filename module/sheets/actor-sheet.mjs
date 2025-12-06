@@ -300,68 +300,97 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   static async _onRollWeapon(event, target) {
     event.preventDefault();
     const item = this.document.items.get(target.dataset.id);
+    const system = item.system;
     const actorData = this.document.system;
-    
-    // 1. Calculate Strength Penalty
-    const str = actorData.derived.attributes.str;
-    const req = item.system.strengthReq || 0;
-    const strPenalty = str < req ? (req - str) : 0;
 
-    // 2. Render Dialog for Modifiers
-    const content = await renderTemplate("systems/colonial-weather/templates/chat/attack-dialog.hbs", {
-        item: item,
-        modes: item.system.rof.split('/'),
-        hasAmmo: item.system.ammo.max > 0
+    // 1. Parse ROF
+    let rofString = String(system.rof || "1");
+    let modes = rofString.split('/').map(s => {
+        const clean = s.trim().toLowerCase();
+        if (clean === "auto" || clean === "a") return "Auto";
+        return parseInt(clean) || 1;
+    });
+
+    // 2. Dialog for Range and Mode
+    const useAmmo = system.ammo.max > 0;
+    
+    const content = await foundry.applications.handlebars.renderTemplate("systems/colonial-weather/templates/chat/attack-dialog.hbs", {
+        modes: modes,
+        hasAmmo: useAmmo,
+        ammo: system.ammo.value
     });
 
     const result = await DialogV2.wait({
-        window: { title: `Attack: ${item.name}` },
+        window: { title: `Attack: ${item.name}`, icon: "fa-solid fa-crosshairs" },
         content: content,
         buttons: [{
             action: "attack",
-            label: "Fire",
-            callback: (event, button, dialog) => new FormDataExtended(dialog.element.querySelector("form")).object
-        }]
+            label: "Attack",
+            icon: "fa-solid fa-crosshairs",
+            callback: (event, button, dialog) => {
+                const form = dialog.element.querySelector("form");
+                return new FormDataExtended(form).object;
+            }
+        }],
+        close: () => null
     });
 
     if (!result) return;
 
-    // 3. Calculate Pool
-    let pool = actorData.derived.attributes[item.system.attribute] + 
-               actorData.skills[item.system.skill].value + 
-               (item.system.attackBonus || 0);
-    
-    // Apply Penalties
-    pool -= strPenalty;
-    if (result.range === "medium") pool -= 2;
-    if (result.range === "long") pool -= 4;
-    if (result.location === "head") pool -= 3;
-    if (result.location === "torso") pool -= 1;
+    // 3. Process Logic (Ammo & Bonuses)
+    const selectedIdx = result.mode; // The index from the dropdown
+    const modeVal = modes[selectedIdx];
+    let shotCount = (modeVal === "Auto") ? 10 : Number(modeVal);
+    let bonus = Number(system.attackBonus) || 0;
 
-    // 4. Roll to Hit
-    // Use your existing roll logic, but pass data for the chat card
-    this.document.rollDicePool(item.system.attribute, item.system.skill, pool - (actorData.derived.attributes[item.system.attribute] + actorData.skills[item.system.skill].value), item);
+    // AMMO DEDUCTION LOGIC
+    if (useAmmo) {
+        if (system.ammo.value < shotCount) {
+            ui.notifications.warn(`Click-click! Not enough ammo. Need ${shotCount}, have ${system.ammo.value}.`);
+            return;
+        }
+        await item.update({"system.ammo.value": system.ammo.value - shotCount});
+    }
 
-    // CALCULATE DAMAGE POOL
-    // Base weapon damage + extra successes from the attack roll (common in Storyteller)
-  const damagePool = item.system.damage + (roll.total > 0 ? (roll.total - 1) : 0); 
+    // BONUS CALCULATION
+    if (shotCount === 3) bonus += 1; 
+    if (shotCount >= 10) bonus += 3;
 
-    // Create the Chat Message with the Button
-    ChatMessage.create({
-      content: `
-          <div class="cw-chat-card">
-              <h3>${item.name} Attack</h3>
-              <p><strong>Result:</strong> ${roll.total} Successes</p>
-              <button data-action="roll-damage" 
-                      data-damage="${damagePool}" 
-                      data-type="${item.system.type}">
-                  Roll Damage (${damagePool} dice)
-              </button>
-          </div>
-      `,
-      speaker: ChatMessage.getSpeaker({ actor: this.document })
-  });
-  
+    // STRENGTH PENALTY (New!)
+    const str = actorData.derived.attributes.str;
+    const req = system.strengthReq || 0;
+    if (str < req) {
+        const pen = req - str;
+        bonus -= pen; // Reduce the pool by the difference
+    }
+
+    // 4. Execute Roll
+    // We await the result because we fixed rollDicePool to return the roll!
+    const roll = await this.document.rollDicePool(system.attribute, system.skill, bonus, item);
+
+    // 5. Generate Damage Button (Only if we have a roll)
+    if (roll) {
+        // Calculate Damage Pool: Base Damage + Net Successes (Total - 1 for TN 7 success)
+        // Storyteller rules usually add extra successes to damage. 
+        // If 1 success is needed to hit, extra successes are (total - 1).
+        const extraSuccesses = Math.max(0, roll.total - 1);
+        const damagePool = (system.damage || 0) + extraSuccesses;
+
+        // Create the Damage Card
+        ChatMessage.create({
+            content: `
+                <div class="cw-chat-card" style="border-top: 1px solid #444; margin-top: 5px; padding-top: 5px;">
+                    <div style="font-size: 0.9em; margin-bottom: 5px;">Attack Hit! (${roll.total} Successes)</div>
+                    <button data-action="roll-damage" 
+                            data-damage="${damagePool}" 
+                            data-type="${system.type}">
+                        <i class="fas fa-skull"></i> Roll Damage (${damagePool} dice)
+                    </button>
+                </div>
+            `,
+            speaker: ChatMessage.getSpeaker({ actor: this.document })
+        });
+    }
 }
 
   // --- NEW RELOAD LOGIC ---
