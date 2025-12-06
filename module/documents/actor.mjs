@@ -346,6 +346,7 @@ getCombatant() {
 
   /**
    * Apply damage to this actor, accounting for armor at the hit location.
+   * Update Hit Points AND the Visual Health Track.
    * @param {number} damageSuccesses - The raw damage count.
    * @param {string} location - The body part hit (e.g., "torso", "head").
    * @param {string} type - "lethal", "bashing", or "aggravated".
@@ -353,49 +354,92 @@ getCombatant() {
   async applyDamage(damageSuccesses, location = "torso", type = "lethal") {
     const system = this.system;
     
-    // 1. Get Armor/Soak for that location
-    // Note: We include Stamina in Soak (Standard Storyteller Rule)
+    // 1. Calculate Soak (Armor + Stamina)
     const armor = system.health.locations[location]?.armor || 0;
     const stamina = system.attributes.sta.value || 0;
     const soak = armor + stamina; 
 
-    // 2. Calculate Final Damage
+    // 2. Calculate Final HP Damage
     const finalDamage = Math.max(0, damageSuccesses - soak);
 
-    // 3. Update Health (Only if damage > 0)
+    // 3. Prepare Chat Data
+    let flavorColor = "#777";
+    let flavorText = "Soaked!";
+    
     if (finalDamage > 0) {
+        flavorColor = "#ff4a4a";
+        flavorText = `${finalDamage} ${type.toUpperCase()} Damage`;
+
+        // --- UPDATE HP VALUES ---
         const locPath = `system.health.locations.${location}.value`;
         const currentLocHP = system.health.locations[location].value;
         const newLocHP = currentLocHP - finalDamage;
 
         const totalPath = `system.health.total.value`;
         const currentTotal = system.health.total.value;
+        const maxTotal = system.health.total.max;
         const newTotal = currentTotal - finalDamage;
 
+        // --- UPDATE HEALTH TRACK (BOXES) ---
+        // Logic: Calculate % of health lost, map to total boxes available
+        const totalBoxes = 7 + (system.health.bonusLevels || 0);
+        const hpPerBox = maxTotal / totalBoxes;
+        
+        // How many boxes should be filled total?
+        const totalDamageTaken = maxTotal - newTotal;
+        const boxesToFill = Math.min(totalBoxes, Math.ceil(totalDamageTaken / hpPerBox));
+
+        // Get current levels array clone
+        const newLevels = [...system.health.levels];
+        
+        // Damage Codes: 1=Bashing, 2=Lethal, 3=Aggravated
+        let typeCode = 1;
+        if (type === "lethal") typeCode = 2;
+        if (type === "aggravated") typeCode = 3;
+
+        // Fill boxes from left to right
+        // (Simple logic: Overwrite existing boxes with new severity if needed, or fill empty ones)
+        for (let i = 0; i < totalBoxes; i++) {
+            if (i < boxesToFill) {
+                // If this box is already filled with worse damage (e.g. Aggravated), keep it.
+                // Otherwise, set it to the current damage type (or Lethal/Bashing mixed).
+                // For simplicity in this hybrid system: We apply the Current Attack's type to the "New" box
+                // or upgrade the highest box. 
+                
+                // Simple Approach: Ensure the first 'boxesToFill' are at least 'typeCode'
+                // Realistically: You might want to track Bashing/Lethal separately, but mapping 78 HP to 7 boxes makes that hard.
+                // We will just mark them as the current type for visual feedback.
+                if (newLevels[i] < typeCode) newLevels[i] = typeCode;
+            } else {
+                // Heal/Clear boxes if HP was restored (future proofing)
+                newLevels[i] = 0;
+            }
+        }
+
+        // Apply Updates
         await this.update({
             [locPath]: newLocHP,
-            [totalPath]: newTotal
+            [totalPath]: newTotal,
+            "system.health.levels": newLevels
         });
     }
 
-    // 4. Report to Chat (ALWAYS show this now)
-    // We change the border color based on result (Red = Ouch, Grey = Soaked)
-    const borderColor = finalDamage > 0 ? "#ff4a4a" : "#777";
-    const title = finalDamage > 0 ? `${this.name} Damaged!` : `${this.name} Soaked!`;
-
+    // 4. Send Chat Card
     ChatMessage.create({
         content: `
-            <div class="cw-chat-card" style="border-top: 3px solid ${borderColor}; padding: 5px; background: rgba(0,0,0,0.1);">
-                <h3 style="border-bottom: 1px solid #555; margin-bottom: 5px;">${title}</h3>
+            <div class="cw-chat-card" style="border-top: 3px solid ${flavorColor}; padding: 5px; background: rgba(0,0,0,0.1);">
+                <h3 style="border-bottom: 1px solid #555; margin-bottom: 5px; font-size:1.1em;">
+                    ${this.name}: ${finalDamage > 0 ? "Hit!" : "No Damage"}
+                </h3>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; font-size: 0.9em; gap: 2px;">
                     <strong>Location:</strong> <span>${location.toUpperCase()}</span>
                     <strong>Raw Dmg:</strong> <span>${damageSuccesses}</span>
-                    <strong>Armor:</strong> <span>${armor}</span>
-                    <strong>Stamina:</strong> <span>${stamina}</span>
+                    <strong>Soak:</strong> <span>-${soak}</span>
+                    <strong>HP Left:</strong> <span>${system.health.total.value - finalDamage} / ${system.health.total.max}</span>
                 </div>
-                <hr style="margin: 5px 0;">
-                <div style="text-align: center; font-size: 1.2em; font-weight: bold; color: ${borderColor};">
-                    ${finalDamage} ${type.toUpperCase()} Applied
+                <hr style="margin: 5px 0; border-color: #555;">
+                <div style="text-align: center; font-size: 1.2em; font-weight: bold; color: ${flavorColor};">
+                    ${flavorText}
                 </div>
             </div>
         `
