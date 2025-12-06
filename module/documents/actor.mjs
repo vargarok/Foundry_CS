@@ -359,7 +359,7 @@ getCombatant() {
     const stamina = system.attributes.sta.value || 0;
     const soak = armor + stamina; 
 
-    // 2. Calculate Final HP Damage
+    // 2. Calculate Final Raw Damage
     const finalDamage = Math.max(0, damageSuccesses - soak);
 
     // 3. Prepare Chat Data
@@ -371,25 +371,30 @@ getCombatant() {
         flavorText = `${finalDamage} ${type.toUpperCase()} Damage`;
 
         // --- UPDATE HP VALUES ---
-        const locPath = `system.health.locations.${location}.value`;
         const currentLocHP = system.health.locations[location].value;
-        const newLocHP = currentLocHP - finalDamage;
-
-        const totalPath = `system.health.total.value`;
         const currentTotal = system.health.total.value;
         const maxTotal = system.health.total.max;
-        const newTotal = currentTotal - finalDamage;
 
-        // --- UPDATE HEALTH TRACK (BOXES) ---
-        // Logic: Calculate % of health lost, map to total boxes available
+        // RULE 4.c.i: OVERSHOOT EXCEPTION
+        // Damage to Total HP cannot exceed the HP currently remaining in the limb.
+        // If limb is already <= 0, no damage transfers to Total HP (unless it's a Vehicle Weapon, which ignores this).
+        // Note: We use Math.max(0, ...) to ensure we don't "heal" the total if limb is negative.
+        const damageToTotal = Math.max(0, Math.min(finalDamage, currentLocHP));
+
+        // Limb takes full damage (it can go negative/disabled)
+        const newLocHP = currentLocHP - finalDamage;
+        
+        // Total takes capped damage
+        const newTotal = currentTotal - damageToTotal;
+
+        // --- UPDATE VISUAL HEALTH TRACK ---
         const totalBoxes = 7 + (system.health.bonusLevels || 0);
         const hpPerBox = maxTotal / totalBoxes;
         
-        // How many boxes should be filled total?
+        // Calculate boxes based on the New Total HP
         const totalDamageTaken = maxTotal - newTotal;
         const boxesToFill = Math.min(totalBoxes, Math.ceil(totalDamageTaken / hpPerBox));
 
-        // Get current levels array clone
         const newLevels = [...system.health.levels];
         
         // Damage Codes: 1=Bashing, 2=Lethal, 3=Aggravated
@@ -397,31 +402,28 @@ getCombatant() {
         if (type === "lethal") typeCode = 2;
         if (type === "aggravated") typeCode = 3;
 
-        // Fill boxes from left to right
-        // (Simple logic: Overwrite existing boxes with new severity if needed, or fill empty ones)
         for (let i = 0; i < totalBoxes; i++) {
             if (i < boxesToFill) {
-                // If this box is already filled with worse damage (e.g. Aggravated), keep it.
-                // Otherwise, set it to the current damage type (or Lethal/Bashing mixed).
-                // For simplicity in this hybrid system: We apply the Current Attack's type to the "New" box
-                // or upgrade the highest box. 
-                
-                // Simple Approach: Ensure the first 'boxesToFill' are at least 'typeCode'
-                // Realistically: You might want to track Bashing/Lethal separately, but mapping 78 HP to 7 boxes makes that hard.
-                // We will just mark them as the current type for visual feedback.
                 if (newLevels[i] < typeCode) newLevels[i] = typeCode;
             } else {
-                // Heal/Clear boxes if HP was restored (future proofing)
                 newLevels[i] = 0;
             }
         }
 
         // Apply Updates
         await this.update({
-            [locPath]: newLocHP,
-            [totalPath]: newTotal,
+            [`system.health.locations.${location}.value`]: newLocHP,
+            "system.health.total.value": newTotal,
             "system.health.levels": newLevels
         });
+
+        // --- OPTIONAL: STATUS CHECK (Chat Notification) ---
+        if (newLocHP < 0) {
+            flavorText += `<br><span style="font-size:0.8em; color:darkred;">⚠️ ${location.toUpperCase()} Disabled/Bleeding!</span>`;
+        }
+        if (newTotal <= 0) {
+            flavorText += `<br><span style="font-size:0.8em; color:darkred;">💀 UNCONSCIOUS / DYING</span>`;
+        }
     }
 
     // 4. Send Chat Card
@@ -435,7 +437,7 @@ getCombatant() {
                     <strong>Location:</strong> <span>${location.toUpperCase()}</span>
                     <strong>Raw Dmg:</strong> <span>${damageSuccesses}</span>
                     <strong>Soak:</strong> <span>-${soak}</span>
-                    <strong>HP Left:</strong> <span>${system.health.total.value - finalDamage} / ${system.health.total.max}</span>
+                    <strong>HP Left:</strong> <span>${system.health.total.value - (finalDamage > 0 ? (Math.max(0, Math.min(finalDamage, system.health.locations[location].value))) : 0)} / ${system.health.total.max}</span>
                 </div>
                 <hr style="margin: 5px 0; border-color: #555;">
                 <div style="text-align: center; font-size: 1.2em; font-weight: bold; color: ${flavorColor};">

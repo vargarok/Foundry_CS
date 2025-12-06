@@ -91,7 +91,7 @@
     "weapon": {
       "templates": ["base"],
       "damage": 4,
-      "damageBonusType": "str", 
+      "damageBonusType": "none", 
       "type": "lethal",
       "attackBonus": 0,
       "range": { "short": 10, "medium": 20, "long": 40 },

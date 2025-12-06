@@ -403,7 +403,16 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // 7. Damage Card
     if (roll && roll.total > 0) {
         const extraSuccesses = Math.max(0, roll.total - 1);
-        const damagePool = Number(system.damage || 0) + extraSuccesses; // FIX 1: Number()
+        // --- NEW: CALCULATE ATTRIBUTE DAMAGE BONUS ---
+        let attrDamageBonus = 0;
+        if (system.damageBonusType === "str") {
+            attrDamageBonus = actorData.derived.attributes.str || 0;
+        } else if (system.damageBonusType === "dex") { // For Martial Arts if needed
+            attrDamageBonus = actorData.derived.attributes.dex || 0;
+        }
+
+        // Total Damage Pool = Base + Attribute Bonus + Net Successes
+        const damagePool = Number(system.damage || 0) + attrDamageBonus + extraSuccesses;
 
         ChatMessage.create({
             content: `

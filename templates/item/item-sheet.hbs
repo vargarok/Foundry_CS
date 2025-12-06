@@ -88,7 +88,13 @@
             <label>Strength Req.</label>
             <input type="number" name="system.strengthReq" value="{{system.strengthReq}}" placeholder="0"/>
         </div>
-
+        <div class="form-group">
+            <label>Damage Bonus</label>
+            <select name="system.damageBonusType">
+                {{selectOptions (array "none" "str" "dex") selected=system.damageBonusType labelAttr=""}}
+            </select>
+            <p class="notes" style="font-size:0.8em; color:#888;">Select Attribute added to damage (e.g. STR for Melee)</p>
+        </div>
         <div class="form-group">
             <label>Armor Piercing</label>
             <input type="number" name="system.ap" value="{{system.ap}}" placeholder="0"/>
@@ -110,11 +116,12 @@
             {{!-- Use the new attributeOptions list --}}
                 {{selectOptions attributeOptions selected=system.attribute}}
             </select>
-        </div>
-        <div class="form-group">
-        <label>Equipped?</label>
-        <input type="checkbox" name="system.equipped" {{checked system.equipped}}/>
-        </div>
+            </div>
+            <div class="form-group">
+            <label>Equipped?</label>
+            <input type="checkbox" name="system.equipped" {{checked system.equipped}}/>
+            </div>
+
       </div>
       {{/if}}
 
