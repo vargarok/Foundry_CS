@@ -446,6 +446,58 @@ getCombatant() {
             </div>
         `
     });
+
+    // --- 5. STATUS EFFECT AUTOMATION ---
+    // Get the token(s) associated with this actor
+    const tokens = this.getActiveTokens();
+
+    for (const token of tokens) {
+        // A. CHECK VITAL LOCATIONS (Head/Chest/Stomach)
+        // If any vital part is destroyed, the character is Incapacitated/Dead
+        const head = system.health.locations.head.value;
+        const chest = system.health.locations.chest.value;
+        const stomach = system.health.locations.stomach.value; // Assuming 'stomach' exists in your template
+
+        if (head < 0 || chest < 0 || stomach < 0) {
+            // Apply "Dead" Overlay
+            if (!token.actor.hasStatusEffect(CONFIG.specialStatusEffects.DEFEATED)) {
+                await token.toggleEffect(CONFIG.specialStatusEffects.DEFEATED, { overlay: true });
+                ChatMessage.create({ content: `<strong>${this.name}</strong> has suffered a fatal wound to a vital area!` });
+            }
+        }
+
+        // B. CHECK TOTAL HP (Unconscious/Dying)
+        // Rule 4.c.ii: If hit points go below zero... unconscious and dying.
+        else if (system.health.total.value < 0) {
+            if (!token.actor.hasStatusEffect("unconscious")) { // standard foundry id is usually "unconscious"
+                 // Note: You might need to map "unconscious" to a specific icon path if standard one fails
+                 await token.toggleEffect("icons/svg/unconscious.svg", { overlay: true }); 
+                 ChatMessage.create({ content: `<strong>${this.name}</strong> collapses, Unconscious and Dying!` });
+            }
+        }
+
+        // C. CHECK BLEEDING (Any location < 0)
+        // Rule 4.b.i: If location < 0... bleeding.
+        let isBleeding = false;
+        for (const loc of Object.values(system.health.locations)) {
+            if (loc.value < 0) isBleeding = true;
+        }
+
+        // Check if we need to add the Bleeding icon (usually a water drop or blood drop)
+        const bleedingIcon = "icons/svg/blood.svg"; 
+        const hasBleeding = token.actor.effects.some(e => e.img === bleedingIcon);
+
+        if (isBleeding && !hasBleeding) {
+            // We create a simpler Active Effect for bleeding
+            await this.createEmbeddedDocuments("ActiveEffect", [{
+                name: "Bleeding",
+                img: bleedingIcon,
+                origin: this.uuid,
+                description: "Losing 1 HP per turn."
+            }]);
+            ChatMessage.create({ content: `<strong>${this.name}</strong> is <strong>Bleeding</strong>! (1 HP/Turn)` });
+        }
+    }
   }
 
     async spendXP(type, key) {
