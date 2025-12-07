@@ -324,14 +324,17 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         buttons: [{
             action: "attack",
             label: "Fire",
-            ccallback: (event, button, dialog) => new foundry.applications.ux.FormDataExtended(dialog.element.querySelector("form")).object
+            callback: (event, button, dialog) => {
+                const form = dialog.element.querySelector("form");
+                return new foundry.applications.ux.FormDataExtended(form).object;
+            }
         }]
     });
 
     if (!result) return;
 
     // 3. Process Modifiers
-    const selectedIdx = result.mode;
+    const selectedIdx = result.mode || 0;
     const modeVal = modes[selectedIdx];
     let shotCount = (modeVal === "Auto") ? 10 : Number(modeVal);
     
@@ -341,40 +344,37 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
                (Number(system.attackBonus) || 0);
 
     // Modifiers
-    // A. Range
     if (result.range === "medium") pool -= 2;
     if (result.range === "long") pool -= 4;
 
-    // B. Strength Requirement
     const str = actorData.derived.attributes.str;
     const req = system.strengthReq || 0;
     if (str < req) pool -= (req - str);
 
-    // C. Hit Location Logic
-    let hitLoc = result.location; // "random", "head", "torso", etc.
-    let locationLabel = "Torso"; // For display
+    // --- FIX: Safe Hit Location Logic ---
+    // 1. Default to "random" if undefined
+    let hitLoc = result.location || "random"; 
+    let locationLabel = "Torso"; 
 
     if (hitLoc === "random") {
-        // Run your Randomizer Logic
         const r = await new Roll("1d10").evaluate();
         const map = {
             1: "head", 2: "chest", 3: "stomach", 4: "stomach", 
             5: "rLeg", 6: "lLeg", 7: "rLeg", 8: "lLeg", 
             9: "rArm", 10: "lArm"
         };
-        // Note: chest/stomach map to "torso" logic usually, but let's keep your keys
-        // If your template.json uses "chest" and "stomach", use those. 
-        // If it uses "torso", map both to "torso".
-        // Assuming your keys are: head, chest, stomach, rArm, lArm, rLeg, lLeg
-        hitLoc = map[r.total]; 
+        // 2. Default to chest if map fails
+        hitLoc = map[r.total] || "chest"; 
         locationLabel = hitLoc.toUpperCase() + " (Random)";
-        // No penalty for random shots
     } else {
         // Called Shot Penalties
         if (hitLoc === "head") pool -= 3;
-        else if (hitLoc === "torso" || hitLoc === "chest") pool -= 1; // "Torso" usually easier
+        else if (hitLoc === "torso" || hitLoc === "chest") pool -= 1;
         else pool -= 2; // Limbs
-        locationLabel = hitLoc.toUpperCase() + " (Called)";
+        
+        // 3. Safe Uppercase (Just in case)
+        const label = hitLoc ? hitLoc.toUpperCase() : "UNKNOWN";
+        locationLabel = label + " (Called)";
     }
 
     // 4. Handle Ammo
@@ -391,10 +391,6 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     if (shotCount >= 10) pool += 3;
 
     // 6. Roll Attack
-    // We pass 0 as bonus here because we calculated the full 'pool' above manually
-    // So we subtract the base attribute/skill to get just the "bonus" part for the function, 
-    // OR we just use the raw pool if your rollDicePool supports it. 
-    // Let's stick to the standard method:
     const basePool = actorData.derived.attributes[system.attribute] + actorData.skills[system.skill].value;
     const finalBonus = pool - basePool; 
 
@@ -403,15 +399,13 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // 7. Damage Card
     if (roll && roll.total > 0) {
         const extraSuccesses = Math.max(0, roll.total - 1);
-        // --- NEW: CALCULATE ATTRIBUTE DAMAGE BONUS ---
         let attrDamageBonus = 0;
         if (system.damageBonusType === "str") {
             attrDamageBonus = actorData.derived.attributes.str || 0;
-        } else if (system.damageBonusType === "dex") { // For Martial Arts if needed
+        } else if (system.damageBonusType === "dex") {
             attrDamageBonus = actorData.derived.attributes.dex || 0;
         }
 
-        // Total Damage Pool = Base + Attribute Bonus + Net Successes
         const damagePool = Number(system.damage || 0) + attrDamageBonus + extraSuccesses;
 
         ChatMessage.create({
