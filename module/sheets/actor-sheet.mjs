@@ -297,146 +297,134 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     await item.delete();
   }
 
-  async applyDamage(damageSuccesses, location = "chest", type = "lethal") {
-    const system = this.system;
-    
-    // 1. Calculate Soak (Armor + Stamina)
-    // Safely access armor, default to 0 if location doesn't exist
-    const locData = system.health.locations[location] || { armor: 0, value: 0 };
-    const armor = locData.armor || 0;
-    const stamina = system.attributes.sta.value || 0;
-    const soak = armor + stamina; 
+  static async _onRollWeapon(event, target) {
+      event.preventDefault();
+      const item = this.document.items.get(target.dataset.id);
+      if (!item) return;
+      
+      const system = item.system;
+      const actorData = this.document.system;
 
-    // 2. Calculate Final Raw Damage
-    const finalDamage = Math.max(0, damageSuccesses - soak);
+      // 1. Setup Dialog Data
+      let rofString = String(system.rof || "1");
+      let modes = rofString.split('/').map(s => {
+          const clean = s.trim().toLowerCase();
+          if (clean === "auto" || clean === "a") return "Auto";
+          return parseInt(clean) || 1;
+      });
 
-    // 3. Prepare Chat Data
-    let flavorColor = "#777";
-    let flavorText = "Soaked!";
-    
-    if (finalDamage > 0) {
-        flavorColor = "#ff4a4a";
-        flavorText = `${finalDamage} ${type.toUpperCase()} Damage`;
+      // 2. Render Dialog
+      const content = await foundry.applications.handlebars.renderTemplate("systems/colonial-weather/templates/chat/attack-dialog.hbs", {
+          modes: modes,
+          hasAmmo: system.ammo.max > 0,
+          ammo: system.ammo.value
+      });
 
-        // --- UPDATE HP VALUES ---
-        const currentLocHP = locData.value;
-        const currentTotal = system.health.total.value;
-        const maxTotal = system.health.total.max;
+      const result = await DialogV2.wait({
+          window: { title: `Attack: ${item.name}`, icon: "fa-solid fa-crosshairs" },
+          content: content,
+          buttons: [{
+              action: "attack",
+              label: "Fire",
+              callback: (event, button, dialog) => {
+                  const form = dialog.element.querySelector("form");
+                  // Use the namespaced FormDataExtended for V13
+                  return new foundry.applications.ux.FormDataExtended(form).object;
+              }
+          }]
+      });
 
-        const damageToTotal = Math.max(0, Math.min(finalDamage, currentLocHP));
+      if (!result) return;
 
-        const newLocHP = currentLocHP - finalDamage;
-        const newTotal = currentTotal - damageToTotal;
+      // 3. Process Modifiers
+      const selectedIdx = result.mode || 0;
+      const modeVal = modes[selectedIdx];
+      let shotCount = (modeVal === "Auto") ? 10 : Number(modeVal);
+      
+      // Base Dice Pool
+      let pool = actorData.derived.attributes[system.attribute] + 
+                actorData.skills[system.skill].value + 
+                (Number(system.attackBonus) || 0);
 
-        // --- UPDATE VISUAL HEALTH TRACK ---
-        const totalBoxes = 7 + (system.health.bonusLevels || 0);
-        const hpPerBox = maxTotal / totalBoxes;
-        const totalDamageTaken = maxTotal - newTotal;
-        const boxesToFill = Math.min(totalBoxes, Math.ceil(totalDamageTaken / hpPerBox));
+      // Modifiers
+      if (result.range === "medium") pool -= 2;
+      if (result.range === "long") pool -= 4;
 
-        // --- FIX: ROBUST ARRAY HANDLING ---
-        let rawLevels = system.health.levels;
-        
-        // If it exists but isn't an array (Foundry DB quirk), convert it to array
-        if (rawLevels && !Array.isArray(rawLevels)) {
-            rawLevels = Object.values(rawLevels);
-        }
-        
-        // If null/undefined, start empty
-        const currentLevels = rawLevels || [];
+      const str = actorData.derived.attributes.str;
+      const req = system.strengthReq || 0;
+      if (str < req) pool -= (req - str);
 
-        // Ensure we have enough zeros to fill the track
-        while (currentLevels.length < totalBoxes) currentLevels.push(0);
-        
-        // Now it is safe to spread
-        const newLevels = [...currentLevels];
-        
-        let typeCode = 1;
-        if (type === "lethal") typeCode = 2;
-        if (type === "aggravated") typeCode = 3;
+      // --- FIX: Safe Hit Location Logic ---
+      let hitLoc = result.location || "random"; 
+      let locationLabel = "Torso"; 
 
-        for (let i = 0; i < totalBoxes; i++) {
-            // Safety check for index
-            if (newLevels[i] === undefined) newLevels[i] = 0;
+      if (hitLoc === "random") {
+          const r = await new Roll("1d10").evaluate();
+          const map = {
+              1: "head", 2: "chest", 3: "stomach", 4: "stomach", 
+              5: "rLeg", 6: "lLeg", 7: "rLeg", 8: "lLeg", 
+              9: "rArm", 10: "lArm"
+          };
+          hitLoc = map[r.total] || "chest"; 
+          locationLabel = hitLoc.toUpperCase() + " (Random)";
+      } else {
+          if (hitLoc === "head") pool -= 3;
+          else if (hitLoc === "torso" || hitLoc === "chest") pool -= 1;
+          else pool -= 2; // Limbs
+          
+          const label = hitLoc ? hitLoc.toUpperCase() : "UNKNOWN";
+          locationLabel = label + " (Called)";
+      }
 
-            if (i < boxesToFill) {
-                // Only upgrade damage, never downgrade (unless you implement healing later)
-                if (newLevels[i] < typeCode) newLevels[i] = typeCode;
-            } else {
-                // Heal/Clear boxes that shouldn't be filled based on current HP
-                newLevels[i] = 0;
-            }
-        }
+      // 4. Handle Ammo
+      if (system.ammo.max > 0) {
+          if (system.ammo.value < shotCount) {
+              ui.notifications.warn("Click! Not enough ammo.");
+              return;
+          }
+          await item.update({"system.ammo.value": system.ammo.value - shotCount});
+      }
 
-        // Apply Updates
-        await this.update({
-            [`system.health.locations.${location}.value`]: newLocHP,
-            "system.health.total.value": newTotal,
-            "system.health.levels": newLevels
-        });
+      // 5. Bonus for Burst/Auto
+      if (shotCount === 3) pool += 1; 
+      if (shotCount >= 10) pool += 3;
 
-        // --- 5. AUTOMATED STATUS EFFECTS ---
-        // A. Vital Organs (Head/Chest/Stomach) -> Dead
-        if (["head", "chest", "stomach"].includes(location) && newLocHP < 0) {
-            const deadId = CONFIG.specialStatusEffects.DEFEATED || "dead";
-            if (!this.statuses.has(deadId)) {
-                await this.toggleStatusEffect(deadId, { overlay: true });
-                ChatMessage.create({ content: `<strong>${this.name}</strong> has suffered a fatal wound to the ${location}!` });
-            }
-        }
+      // 6. Roll Attack
+      const basePool = actorData.derived.attributes[system.attribute] + actorData.skills[system.skill].value;
+      const finalBonus = pool - basePool; 
 
-        // B. Total HP < 0 -> Unconscious
-        else if (newTotal < 0) {
-            const unconsciousId = "unconscious"; 
-            if (!this.statuses.has(unconsciousId)) {
-                 await this.toggleStatusEffect(unconsciousId, { overlay: true }); 
-                 ChatMessage.create({ content: `<strong>${this.name}</strong> collapses, Unconscious and Dying!` });
-            }
-        }
+      const roll = await this.document.rollDicePool(system.attribute, system.skill, finalBonus, item);
 
-        // C. Limb Disabled -> Bleeding
-        if (["rArm", "lArm", "rLeg", "lLeg"].includes(location) && newLocHP < 0) {
-            const bleedingIcon = "icons/svg/blood.svg"; 
-            // Check existing effects safely
-            const hasBleeding = this.effects.some(e => e.img === bleedingIcon);
+      // 7. Damage Card
+      if (roll && roll.total > 0) {
+          const extraSuccesses = Math.max(0, roll.total - 1);
+          
+          let attrDamageBonus = 0;
+          if (system.damageBonusType === "str") {
+              attrDamageBonus = actorData.derived.attributes.str || 0;
+          } else if (system.damageBonusType === "dex") {
+              attrDamageBonus = actorData.derived.attributes.dex || 0;
+          }
 
-            if (!hasBleeding) {
-                await this.createEmbeddedDocuments("ActiveEffect", [{
-                    name: "Bleeding",
-                    img: bleedingIcon,
-                    origin: this.uuid,
-                    description: "Losing 1 HP per turn."
-                }]);
-                ChatMessage.create({ content: `<strong>${this.name}</strong>'s ${location} is disabled! They are <strong>Bleeding</strong>.` });
-            }
-        }
+          const damagePool = Number(system.damage || 0) + attrDamageBonus + extraSuccesses;
 
-        // --- OPTIONAL: CHAT TEXT UPDATES ---
-        if (newLocHP < 0) {
-            flavorText += `<br><span style="font-size:0.8em; color:darkred;">⚠️ ${location.toUpperCase()} Disabled!</span>`;
-        }
-    }
-
-    // 4. Send Chat Card
-    ChatMessage.create({
-        content: `
-            <div class="cw-chat-card" style="border-top: 3px solid ${flavorColor}; padding: 5px; background: rgba(0,0,0,0.1);">
-                <h3 style="border-bottom: 1px solid #555; margin-bottom: 5px; font-size:1.1em;">
-                    ${this.name}: ${finalDamage > 0 ? "Hit!" : "No Damage"}
-                </h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; font-size: 0.9em; gap: 2px;">
-                    <strong>Location:</strong> <span>${location.toUpperCase()}</span>
-                    <strong>Raw Dmg:</strong> <span>${damageSuccesses}</span>
-                    <strong>Soak:</strong> <span>-${soak}</span>
-                    <strong>HP Left:</strong> <span>${system.health.total.value - (finalDamage > 0 ? (Math.max(0, Math.min(finalDamage, locData.value))) : 0)} / ${system.health.total.max}</span>
-                </div>
-                <hr style="margin: 5px 0; border-color: #555;">
-                <div style="text-align: center; font-size: 1.2em; font-weight: bold; color: ${flavorColor};">
-                    ${flavorText}
-                </div>
-            </div>
-        `
-    });
+          ChatMessage.create({
+              content: `
+                  <div class="cw-chat-card" style="border-top: 1px solid #444; margin-top: 5px; padding-top: 5px;">
+                      <div style="font-size: 0.9em; margin-bottom: 5px;">
+                          Hit <strong>${locationLabel}</strong>! (${roll.total} Successes)
+                      </div>
+                      <button data-action="roll-damage" 
+                              data-damage="${damagePool}" 
+                              data-type="${system.type}"
+                              data-location="${hitLoc}">
+                          <i class="fas fa-skull"></i> Roll Damage (${damagePool} dice)
+                      </button>
+                  </div>
+              `,
+              speaker: ChatMessage.getSpeaker({ actor: this.document })
+          });
+      }
   }
 
   // --- NEW RELOAD LOGIC ---

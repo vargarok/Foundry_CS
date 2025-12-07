@@ -355,7 +355,6 @@ getCombatant() {
     const system = this.system;
     
     // 1. Calculate Soak (Armor + Stamina)
-    // Safely access armor, default to 0 if location doesn't exist
     const locData = system.health.locations[location] || { armor: 0, value: 0 };
     const armor = locData.armor || 0;
     const stamina = system.attributes.sta.value || 0;
@@ -388,10 +387,16 @@ getCombatant() {
         const totalDamageTaken = maxTotal - newTotal;
         const boxesToFill = Math.min(totalBoxes, Math.ceil(totalDamageTaken / hpPerBox));
 
-        // FIX: Safe access to levels using ( || [] )
-        const currentLevels = system.health.levels || [];
-        // Ensure we have enough zeros if the array is empty
-        while (currentLevels.length < 7) currentLevels.push(0);
+        // --- FIX: Force Levels to Array ---
+        let rawLevels = system.health.levels;
+        // If DB returned an object (e.g. {0:0, 1:0}), convert to array
+        if (rawLevels && !Array.isArray(rawLevels)) {
+            rawLevels = Object.values(rawLevels);
+        }
+        
+        const currentLevels = rawLevels || [];
+        // Pad with 0s if short
+        while (currentLevels.length < totalBoxes) currentLevels.push(0);
         
         const newLevels = [...currentLevels];
         
@@ -400,11 +405,10 @@ getCombatant() {
         if (type === "aggravated") typeCode = 3;
 
         for (let i = 0; i < totalBoxes; i++) {
-            // Ensure the array index exists
             if (newLevels[i] === undefined) newLevels[i] = 0;
 
             if (i < boxesToFill) {
-                // Only upgrade damage, never downgrade (unless healing)
+                // Only upgrade damage, never downgrade
                 if (newLevels[i] < typeCode) newLevels[i] = typeCode;
             } else {
                 newLevels[i] = 0;
@@ -430,7 +434,7 @@ getCombatant() {
 
         // B. Total HP < 0 -> Unconscious
         else if (newTotal < 0) {
-            const unconsciousId = "unconscious";
+            const unconsciousId = "unconscious"; 
             if (!this.statuses.has(unconsciousId)) {
                  await this.toggleStatusEffect(unconsciousId, { overlay: true }); 
                  ChatMessage.create({ content: `<strong>${this.name}</strong> collapses, Unconscious and Dying!` });
