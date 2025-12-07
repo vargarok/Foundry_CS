@@ -351,7 +351,7 @@ getCombatant() {
    * @param {string} location - The body part hit (e.g., "torso", "head").
    * @param {string} type - "lethal", "bashing", or "aggravated".
    */
-  async applyDamage(damageSuccesses, location = "torso", type = "lethal") {
+  async applyDamage(damageSuccesses, location = "chest", type = "lethal") {
     const system = this.system;
     
     // 1. Calculate Soak (Armor + Stamina)

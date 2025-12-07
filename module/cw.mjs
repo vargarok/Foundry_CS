@@ -108,7 +108,7 @@ Hooks.on("renderChatMessage", (message, html, data) => {
             // 1. Get Button Data
             const damageFormula = button.dataset.damage; 
             const type = button.dataset.type;            
-            const location = button.dataset.location || "torso"; // Get the location!
+            const location = button.dataset.location || "chest"; // Get the location!
 
             // 2. Roll Damage
             const roll = await new Roll(`${damageFormula}d10cs>=6`).evaluate();
