@@ -477,10 +477,16 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         const extraSuccesses = Math.max(0, roll.total - 1);
         
         let attrDamageBonus = 0;
+        
+        // RULE: "Muscle-powered attacks add one point of damage for every point of strength beyond 1."
         if (system.damageBonusType === "str") {
-            attrDamageBonus = actorData.derived.attributes.str || 0;
-        } else if (system.damageBonusType === "dex") {
-            attrDamageBonus = actorData.derived.attributes.dex || 0;
+            const str = actorData.derived.attributes.str || 0;
+            attrDamageBonus = Math.max(0, str - 1); 
+        } 
+        // Applying same logic to Martial Arts (Dex) if selected
+        else if (system.damageBonusType === "dex") {
+            const dex = actorData.derived.attributes.dex || 0;
+            attrDamageBonus = Math.max(0, dex - 1);
         }
 
         const damagePool = Number(system.damage || 0) + attrDamageBonus + extraSuccesses;

@@ -360,10 +360,9 @@ getCombatant() {
     const stamina = system.attributes.sta.value || 0;
     const soak = armor + stamina; 
 
-    // --- ARMOR DESTRUCTION LOGIC ---
+    // --- ABLATIVE ARMOR LOGIC ---
     let armorMsg = "";
     if (armor > 0 && damageSuccesses > (2 * armor)) {
-        // Find armor items on this location
         const armorItems = this.items.filter(i => 
             i.type === "armor" && 
             i.system.equipped && 
@@ -372,14 +371,15 @@ getCombatant() {
 
         if (armorItems.length > 0) {
             const targetArmor = armorItems[0];
-
+            const newSoak = Math.max(0, targetArmor.system.soak - 1);
             
             await targetArmor.update({
-                "system.equipped": false,
-                "name": `${targetArmor.name} (Destroyed)`
+                "system.soak": newSoak,
+                "name": `${targetArmor.name} (Damaged)`
             });
-            armorMsg = `<div style="color: #ff4a4a; font-weight: bold; margin-top:5px;">
-                <i class="fas fa-shield-alt"></i> ARMOR DESTROYED!
+            
+            armorMsg = `<div style="color: #ff8c00; font-size:0.85em; margin-top:5px;">
+                <i class="fas fa-shield-alt" style="color:red;"></i> Armor Degraded! (-1 Soak)
             </div>`;
         }
     }
@@ -395,7 +395,6 @@ getCombatant() {
         flavorColor = "#ff4a4a";
         flavorText = `${finalDamage} ${type.toUpperCase()} Damage`;
 
-        // --- MASSIVE DAMAGE THRESHOLD ---
         const isMassiveDamage = finalDamage > 7;
 
         // --- UPDATE HP VALUES ---
@@ -408,56 +407,74 @@ getCombatant() {
         let newLocHP = currentLocHP - finalDamage;
         const newTotal = currentTotal - damageToTotal;
 
-        // Force Limb Destruction on Massive Damage
         if (isMassiveDamage && newLocHP > -1) newLocHP = -1;
 
-        // --- UPDATE VISUAL HEALTH TRACK ---
+        // --- UPDATE VISUAL HEALTH TRACK (SORTING LOGIC) ---
         const totalBoxes = 7 + (system.health.bonusLevels || 0);
         const hpPerBox = maxTotal / totalBoxes;
         
-        const totalDamageTaken = maxTotal - newTotal;
-        let boxesToFill = Math.min(totalBoxes, Math.ceil(totalDamageTaken / hpPerBox));
+        // A. Calculate how many NEW boxes this specific hit is worth
+        // (We calculate against the 'damageToTotal' to ensure we don't add boxes for overkill limb damage that didn't hurt the body)
+        // However, standard WoD usually counts the full impact severity for the track.
+        // Let's use damageToTotal for consistency with the HP bar.
+        const boxesAdded = Math.ceil(damageToTotal / hpPerBox);
 
-        // --- FIX: PERSIST INCAPACITATION ---
-        // Check if vital destroyed OR massive damage OR already unconscious/dead
+        // B. Get Existing Levels (Array Safe)
+        let levels = system.health.levels;
+        if (levels && !Array.isArray(levels)) levels = Object.values(levels);
+        levels = levels || [];
+        
+        // Clean existing levels (remove 0s for sorting)
+        let activeWounds = levels.filter(l => l > 0);
+
+        // C. Define Damage Type Code
+        let typeCode = 1; // Bashing
+        if (type === "lethal") typeCode = 2;
+        if (type === "aggravated") typeCode = 3;
+
+        // D. Add New Wounds
+        for (let i = 0; i < boxesAdded; i++) {
+            activeWounds.push(typeCode);
+        }
+
+        // E. Sort: Aggravated (3) > Lethal (2) > Bashing (1)
+        activeWounds.sort((a, b) => b - a);
+
+        // F. Handle Overflow (Incapacitation)
+        // If we have more wounds than boxes, the excess are "lost" visually but the track is full.
+        // (Realistically, Bashing might convert to Lethal here, but let's keep it simple: Full is Full).
+        if (activeWounds.length > totalBoxes) {
+            activeWounds = activeWounds.slice(0, totalBoxes);
+        }
+
+        // G. Force Incapacitation Override
+        // If vital destroyed or massive damage, fill EVERYTHING with at least Lethal (or current type)
         const isDestroyedHP = newLocHP < 0;
         const isVital = ["head", "chest", "stomach"].includes(location);
         
-        // We check 'statuses' to see if they were ALREADY out of the fight.
+        // Check if already down to preserve state
         const isAlreadyDown = this.statuses.has("unconscious") || 
                               this.statuses.has(CONFIG.specialStatusEffects.DEFEATED) ||
                               this.statuses.has("dead");
 
         if (isMassiveDamage || (isVital && isDestroyedHP) || isAlreadyDown) {
-            boxesToFill = totalBoxes; // Force Full Track
-        }
-
-        // --- ARRAY HANDLING ---
-        let rawLevels = system.health.levels;
-        if (rawLevels && !Array.isArray(rawLevels)) rawLevels = Object.values(rawLevels);
-        const currentLevels = rawLevels || [];
-        while (currentLevels.length < totalBoxes) currentLevels.push(0);
-        
-        const newLevels = [...currentLevels];
-        
-        let typeCode = 1; // Bashing
-        if (type === "lethal") typeCode = 2;
-        if (type === "aggravated") typeCode = 3;
-
-        for (let i = 0; i < totalBoxes; i++) {
-            if (newLevels[i] === undefined) newLevels[i] = 0;
-            if (i < boxesToFill) {
-                if (newLevels[i] < typeCode) newLevels[i] = typeCode;
-            } else {
-                newLevels[i] = 0;
+            // Fill any empty slots with the current damage type (or Lethal minimum)
+            while (activeWounds.length < totalBoxes) {
+                activeWounds.push(Math.max(2, typeCode)); 
             }
+            // Re-sort to be safe
+            activeWounds.sort((a, b) => b - a);
         }
+
+        // H. Reconstruct Full Array (Pad with 0s)
+        const finalLevels = [...activeWounds];
+        while (finalLevels.length < totalBoxes) finalLevels.push(0);
 
         // Apply Updates
         await this.update({
             [`system.health.locations.${location}.value`]: newLocHP,
             "system.health.total.value": newTotal,
-            "system.health.levels": newLevels
+            "system.health.levels": finalLevels
         });
 
         // --- 5. AUTOMATED STATUS EFFECTS ---
