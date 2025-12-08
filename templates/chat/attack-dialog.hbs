@@ -13,7 +13,7 @@
     </div>
 
     <div class="form-group">
-        <label>Range (Dist: {{targetDist}}):</label>
+        <label>Range (Dist: {{targetDist}} {{units}}):</label>
         <select name="range">
             {{selectOptions rangeOptions selected=suggestedRange}}
         </select>
@@ -23,9 +23,9 @@
         <label>Attack Type:</label>
         <div style="padding: 5px; font-weight: bold; text-align: center; background: rgba(0,0,0,0.2); border-radius: 4px;">
             {{#if (eq suggestedRange "out")}}
-                <span style="color: #ff4a4a;"><i class="fas fa-exclamation-triangle"></i> Out of Range ({{targetDist}})</span>
+                <span style="color: #ff4a4a;"><i class="fas fa-exclamation-triangle"></i> Out of Reach ({{targetDist}} {{units}})</span>
             {{else}}
-                Melee Attack
+                Melee Attack ({{targetDist}} {{units}})
             {{/if}}
         </div>
     </div>

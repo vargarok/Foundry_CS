@@ -312,7 +312,12 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
 
     // Grid Distance Calculation
     let targetDist = 0;
-    let suggestedRange = "short"; // Default
+    let units = canvas.scene.grid.units || "units"; // Get Scene Units (m, ft, etc.)
+    let suggestedRange = "short"; 
+    
+    // Store the calculated bracket to compare later
+    let calculatedBracket = "short"; 
+
     const targets = game.user.targets;
 
     if (targets.size > 0) {
@@ -320,7 +325,7 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         const selfToken = this.document.token?.object || canvas.tokens.controlled[0];
 
         if (selfToken) {
-            // FIX: V13 Compatible Distance Measurement
+            // V13: Measure Distance between centers
             const waypoints = [selfToken.center, targetToken.center];
             const measurement = canvas.grid.measurePath(waypoints);
             targetDist = Math.round(measurement.distance * 10) / 10;
@@ -332,16 +337,16 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             const m = Number(system.range.medium) || 0;
             const l = Number(system.range.long) || 0;
 
-            if (targetDist <= s) suggestedRange = "short";
-            else if (targetDist <= m) suggestedRange = "medium";
-            else if (targetDist <= l) suggestedRange = "long";
-            else suggestedRange = "out"; 
+            if (targetDist <= s) { suggestedRange = "short"; calculatedBracket = "short"; }
+            else if (targetDist <= m) { suggestedRange = "medium"; calculatedBracket = "medium"; }
+            else if (targetDist <= l) { suggestedRange = "long"; calculatedBracket = "long"; }
+            else { suggestedRange = "out"; calculatedBracket = "out"; }
         } else {
-            // MELEE LOGIC: Check if within 1 grid unit (e.g. 1.5m or 5ft)
-            // We give a tiny epsilon (0.1) for floating point errors
+            // Melee Logic (Reach check)
             const meleeReach = canvas.scene.grid.distance; 
             if (targetDist > (meleeReach + 0.1)) {
                 suggestedRange = "out";
+                calculatedBracket = "out";
             }
         }
     }
@@ -369,7 +374,8 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         isRanged: isRanged,
         isMelee: isMelee,
         targetDist: targetDist,
-        suggestedRange: suggestedRange, // Pass this to the template
+        units: units, // Pass units to template
+        suggestedRange: suggestedRange, 
         rangeOptions: rangeOptions
     });
 
@@ -403,11 +409,18 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         const modeVal = modes[selectedIdx];
         shotCount = (modeVal === "Auto") ? 10 : Number(modeVal);
 
+        // --- VALIDATION LOGIC ---
+        // If user selects a range BETTER than the physical distance, warn them.
+        const rangeSeverity = { "short": 1, "medium": 2, "long": 3, "out": 4 };
+        if (rangeSeverity[result.range] < rangeSeverity[calculatedBracket]) {
+             ui.notifications.warn(`⚠️ Range Override: You selected '${result.range.toUpperCase()}' but target is ${targetDist}${units} away (${calculatedBracket.toUpperCase()}).`);
+        }
+
         if (result.range === "medium") pool -= 2;
         if (result.range === "long") pool -= 4;
         if (result.range === "out") {
-            ui.notifications.warn("Target is out of range!");
-            return; // STOP ATTACK
+            ui.notifications.error("Attack Aborted: Target is out of range.");
+            return; 
         }
 
         if (system.ammo.max > 0) {
@@ -423,13 +436,11 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     } 
     else {
         // Melee Logic
-        // We use the `suggestedRange` we calculated earlier (or check distance again)
-        // Since `result` doesn't contain a range dropdown for melee, we check `targetDist` again or rely on pre-calc.
-        // Let's re-verify to be safe.
         const meleeReach = canvas.scene.grid.distance;
+        // Strict Melee Check
         if (targets.size > 0 && targetDist > (meleeReach + 0.1)) {
-             ui.notifications.warn("Target is out of melee reach!");
-             return; // STOP ATTACK
+             ui.notifications.error(`Target is out of melee reach! (${targetDist}${units})`);
+             return; 
         }
     }
 
