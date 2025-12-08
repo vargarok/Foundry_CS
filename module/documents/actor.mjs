@@ -373,7 +373,7 @@ getCombatant() {
         if (armorItems.length > 0) {
             const targetArmor = armorItems[0];
 
-            /* --- OPTION A: STRICT RULES (Instant Destruction) --- 
+            
             await targetArmor.update({
                 "system.equipped": false,
                 "name": `${targetArmor.name} (Destroyed)`
@@ -381,18 +381,6 @@ getCombatant() {
             armorMsg = `<div style="color: #ff4a4a; font-weight: bold; margin-top:5px;">
                 <i class="fas fa-shield-alt"></i> ARMOR DESTROYED!
             </div>`;
-            */
-
-            // --- OPTION B: ABLATIVE (Current House Rule) ---
-            const newSoak = Math.max(0, targetArmor.system.soak - 1);
-            await targetArmor.update({
-                "system.soak": newSoak,
-                "name": `${targetArmor.name} (Damaged)`
-            });
-            armorMsg = `<div style="color: #ff8c00; font-size:0.85em; margin-top:5px;">
-                <i class="fas fa-shield-alt" style="color:red;"></i> Armor Degraded! (-1 Soak)
-            </div>`;
-            // ------------------------------------------------
         }
     }
 
