@@ -360,27 +360,30 @@ getCombatant() {
     const stamina = system.attributes.sta.value || 0;
     const soak = armor + stamina; 
 
-    // --- RULE: ARMOR DESTRUCTION ---
-    // "If damage in a single attack exceeds twice the armour, the armour (or cover) is destroyed."
-    // We check Raw Damage (damageSuccesses) vs Armor
-    let armorDestroyedMsg = "";
+    // --- RULE: ABLATIVE ARMOR DESTRUCTION ---
+    // If Raw Damage > 2 * Armor, armor is damaged (-1 Soak)
+    let armorMsg = "";
     if (armor > 0 && damageSuccesses > (2 * armor)) {
-        // Find armor items equipped on this location
+        // Find armor items on this location
         const armorItems = this.items.filter(i => 
             i.type === "armor" && 
             i.system.equipped && 
             i.system.coverage.includes(location)
         );
 
+        // Degrade the first applicable armor found (usually the outer layer)
         if (armorItems.length > 0) {
-            const updates = armorItems.map(i => ({
-                _id: i.id,
-                "system.equipped": false, // Unequip it
-                "name": `${i.name} (Destroyed)` // Mark it
-            }));
+            const targetArmor = armorItems[0];
+            const newSoak = Math.max(0, targetArmor.system.soak - 1);
             
-            await this.updateEmbeddedDocuments("Item", updates);
-            armorDestroyedMsg = `<div style="color: #ff8c00; font-weight: bold; margin-top:5px;"><i class="fas fa-shield-alt"></i> ARMOR DESTROYED!</div>`;
+            await targetArmor.update({
+                "system.soak": newSoak,
+                "name": `${targetArmor.name} (Damaged)`
+            });
+            
+            armorMsg = `<div style="color: #ff8c00; font-size:0.85em; margin-top:5px;">
+                <i class="fas fa-shield-alt" style="color:red;"></i> Armor Damaged! (-1 Soak)
+            </div>`;
         }
     }
 
@@ -396,6 +399,7 @@ getCombatant() {
         flavorText = `${finalDamage} ${type.toUpperCase()} Damage`;
 
         // --- RULE: MASSIVE DAMAGE THRESHOLD ---
+        // If damage > 7 in one hit, limb is destroyed immediately.
         const isMassiveDamage = finalDamage > 7;
 
         // --- UPDATE HP VALUES ---
@@ -405,8 +409,15 @@ getCombatant() {
 
         const damageToTotal = Math.max(0, Math.min(finalDamage, currentLocHP));
 
-        const newLocHP = currentLocHP - finalDamage;
+        let newLocHP = currentLocHP - finalDamage;
         const newTotal = currentTotal - damageToTotal;
+
+        // FORCE LIMB DESTRUCTION
+        // If massive damage occurred, force the limb to -1 (Destroyed state) 
+        // regardless of remaining HP. This fixes the "It has 6 HP left" issue.
+        if (isMassiveDamage && newLocHP > -1) {
+            newLocHP = -1;
+        }
 
         // --- UPDATE VISUAL HEALTH TRACK ---
         const totalBoxes = 7 + (system.health.bonusLevels || 0);
@@ -457,13 +468,12 @@ getCombatant() {
 
         // --- 5. AUTOMATED STATUS EFFECTS ---
         
-        // A. STUN CHECK (General Rule based on "Sap")
-        // If damage exceeds Stamina, the target is Stunned (Lost Action)
+        // A. STUN CHECK (Damage >= Stamina)
         if (finalDamage >= stamina) {
-            const stunId = "stun"; // Standard Foundry ID
+            const stunId = "stun"; 
             if (!this.statuses.has(stunId)) {
                 await this.toggleStatusEffect(stunId, { overlay: false });
-                ChatMessage.create({ content: `<strong>${this.name}</strong> is <strong>Stunned</strong> by the impact!` });
+                ChatMessage.create({ content: `<strong>${this.name}</strong> is <strong>Stunned</strong>!` });
             }
         }
 
@@ -481,29 +491,33 @@ getCombatant() {
             const unconsciousId = "unconscious"; 
             if (!this.statuses.has(unconsciousId)) {
                  await this.toggleStatusEffect(unconsciousId, { overlay: true }); 
-                 ChatMessage.create({ content: `<strong>${this.name}</strong> is Incapacitated by trauma!` });
+                 ChatMessage.create({ content: `<strong>${this.name}</strong> is Incapacitated!` });
             }
         }
 
-        // D. BLEEDING / DISABLED LIMB
+        // D. BLEEDING (Limb Destroyed)
+        // Checks both HP < 0 OR Massive Damage
         const isLimb = ["rArm", "lArm", "rLeg", "lLeg"].includes(location);
-        if (isLimb && (isDestroyedHP || isMassiveDamage)) {
+        if (isLimb && (newLocHP < 0 || isMassiveDamage)) {
             const bleedingIcon = "icons/svg/blood.svg"; 
-            const hasBleeding = this.effects.some(e => e.img === bleedingIcon);
+            
+            // Check if effect exists (Safe check)
+            const hasBleeding = this.effects.some(e => e.name === "Bleeding" || e.img === bleedingIcon);
 
             if (!hasBleeding) {
                 await this.createEmbeddedDocuments("ActiveEffect", [{
                     name: "Bleeding",
                     img: bleedingIcon,
                     origin: this.uuid,
-                    description: "Losing 1 HP per turn."
+                    description: "Losing 1 HP per turn.",
+                    duration: { rounds: 100 } // Just so it shows up in trackers
                 }]);
                 ChatMessage.create({ content: `<strong>${this.name}</strong>'s ${location} is destroyed! They are <strong>Bleeding</strong>.` });
             }
         }
 
         // --- OPTIONAL: CHAT TEXT UPDATES ---
-        if (isDestroyedHP || isMassiveDamage) {
+        if (newLocHP < 0) {
             flavorText += `<br><span style="font-size:0.8em; color:darkred;">⚠️ ${location.toUpperCase()} DESTROYED!</span>`;
         }
     }
@@ -521,7 +535,7 @@ getCombatant() {
                     <strong>Soak:</strong> <span>-${soak}</span>
                     <strong>HP Left:</strong> <span>${system.health.total.value - (finalDamage > 0 ? (Math.max(0, Math.min(finalDamage, locData.value))) : 0)} / ${system.health.total.max}</span>
                 </div>
-                ${armorDestroyedMsg}
+                ${armorMsg}
                 <hr style="margin: 5px 0; border-color: #555;">
                 <div style="text-align: center; font-size: 1.2em; font-weight: bold; color: ${flavorColor};">
                     ${flavorText}

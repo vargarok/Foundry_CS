@@ -140,5 +140,48 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
     }
 });
 
+// --- COMBAT TURN AUTOMATION ---
+Hooks.on("updateCombat", async (combat, updateData, options, userId) => {
+    // Only run on the GM client to prevent double-damage
+    if (!game.user.isGM) return;
+    
+    // Ensure it's a turn change (not just someone toggling hidden)
+    if (!updateData.round && !updateData.turn) return;
+
+    const combatant = combat.combatant;
+    if (!combatant || !combatant.actor) return;
+
+    const actor = combatant.actor;
+    
+    // Check for Bleeding Effect
+    // We look for an effect named "Bleeding" or with the blood drop icon
+    const bleedingEffect = actor.effects.find(e => e.name === "Bleeding" || e.img === "icons/svg/blood.svg");
+
+    if (bleedingEffect) {
+        // Apply 1 Direct Damage (Internal/Bleeding ignores soak)
+        const currentTotal = actor.system.health.total.value;
+        const newTotal = currentTotal - 1;
+        
+        // Update Actor
+        await actor.update({
+            "system.health.total.value": newTotal
+        });
+
+        // Chat Notification
+        ChatMessage.create({
+            content: `<div style="background: #3c0000; color: #ffcccc; padding: 5px; border: 1px solid darkred; font-size: 0.9em;">
+                        <i class="fas fa-tint"></i> <strong>${actor.name}</strong> bleeds! <br>
+                        1 Damage taken. (HP: ${newTotal} / ${actor.system.health.total.max})
+                      </div>`,
+            speaker: ChatMessage.getSpeaker({ actor: actor })
+        });
+        
+        // Check for Death by Bleeding
+        if (newTotal < 0 && !actor.statuses.has("unconscious")) {
+             await actor.toggleStatusEffect("unconscious", { overlay: true });
+        }
+    }
+});
+
   preloadHandlebarsTemplates();
 });
