@@ -1,14 +1,10 @@
 export class CWActor extends Actor {
 
-  prepareDerivedData() {
+prepareBaseData() {
     const system = this.system;
-    
+
     // --- 1. Initialize Skills ---
     system.skills = system.skills || {};
-
-    const total = system.experience.total || 0;
-    const spent = system.experience.spent || 0;
-    system.experience.unspent = total - spent;
 
     for (const [key, data] of Object.entries(CONFIG.CW.skills)) {
       if (!system.skills[key]) {
@@ -35,6 +31,15 @@ export class CWActor extends Actor {
         system.backgrounds[key].label = label;
       }
     }
+  }
+
+  prepareDerivedData() {
+    const system = this.system;
+
+    // XP Calculation
+    const total = system.experience.total || 0;
+    const spent = system.experience.spent || 0;
+    system.experience.unspent = total - spent;
 
     // --- 3. Gravity Mods ---
     const home = (system.bio.gravityHome || "Normal").toLowerCase();
@@ -253,6 +258,85 @@ export class CWActor extends Actor {
     };
     const res = (map[home]?.[here]) || [0,0,0];
     return {str: res[0], dex: res[1], sta: res[2]};
+  }
+
+  /**
+   * Heal damage based on time and care quality.
+   * @param {string} type "bashing" or "lethal"
+   * @param {number} amount Number of levels to heal
+   */
+  async recoverHealth(type, amount) {
+      const system = this.system;
+      let levels = system.health.levels;
+      if (levels && !Array.isArray(levels)) levels = Object.values(levels);
+      levels = levels || [];
+
+      // Create a working copy
+      const newLevels = [...levels];
+      let healedCount = 0;
+
+      // Healing Logic: Find the worst wound of the specific type and clear it
+      // Standard WoD healing usually pushes wounds "down" (Left), clearing from the Right.
+      // But since we sort wounds (Agg -> Lethal -> Bashing), we effectively heal from the "bottom" up.
+      
+      const targetCode = (type === "lethal") ? 2 : 1;
+
+      // We loop as many times as we have 'healing points'
+      for (let h = 0; h < amount; h++) {
+          // Find the right-most (least severe) wound of this type or lower
+          // Note: In standard rules, healing Lethal converts it to Bashing? 
+          // Or does it remove it? The PDF implies "Recovery Time", suggesting removal.
+          // Let's assume Removal for simplicity unless you want the conversion rule.
+          
+          let foundIndex = -1;
+          
+          // Find the last occurrence of the specific damage type
+          for (let i = newLevels.length - 1; i >= 0; i--) {
+              if (newLevels[i] === targetCode) {
+                  foundIndex = i;
+                  break;
+              }
+          }
+
+          if (foundIndex > -1) {
+              newLevels[foundIndex] = 0; // Clear the box
+              healedCount++;
+          } else {
+              break; // No more wounds of this type to heal
+          }
+      }
+
+      // Re-Sort to keep zeros at the end
+      newLevels.sort((a, b) => b - a);
+
+      if (healedCount > 0) {
+          // Update Actor
+          await this.update({ "system.health.levels": newLevels });
+          
+          // Remove Statuses if healthy enough
+          // Calculate penalty again to see if we are still Incapacitated
+          // (This logic mirrors prepareDerivedData)
+          let penalty = 0;
+          for (let i = 6; i >= 0; i--) {
+              if (newLevels[i] > 0) { 
+                  penalty = CONFIG.CW.healthLevels[i].penalty;
+                  break; 
+              }
+          }
+
+          if (penalty < 99) {
+              if (this.statuses.has("unconscious")) await this.toggleStatusEffect("unconscious", { active: false });
+              if (this.statuses.has("dead")) await this.toggleStatusEffect("dead", { active: false });
+          }
+
+          ChatMessage.create({
+              content: `<div style="color:green; font-weight:bold;">
+                  <i class="fas fa-heart"></i> ${this.name} recovered ${healedCount} levels of ${type} damage.
+              </div>`
+          });
+      } else {
+          ui.notifications.info("No wounds of that type to heal.");
+      }
   }
 
   async rollInitiativeDialog() {

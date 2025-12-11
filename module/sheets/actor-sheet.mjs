@@ -511,6 +511,67 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
 }
 
+static async _onRecoverHealth(event, target) {
+      const actor = this.document;
+      
+      const content = `
+          <form>
+              <div class="form-group">
+                  <label>Time Rested:</label>
+                  <select name="time">
+                      <option value="hour">1 Hour (Heals Bashing)</option>
+                      <option value="night">Full Night (Heals All Bashing)</option>
+                      <option value="day">1 Day (Heals 1 Lethal)</option>
+                      <option value="week">1 Week (Heals 2-3 Lethal)</option>
+                  </select>
+              </div>
+              <div class="form-group">
+                  <label>Medical Care:</label>
+                  <select name="care">
+                      <option value="0">None / Field</option>
+                      <option value="1">Basic (Nurse/Kit)</option>
+                      <option value="2">Hospital (+1 Healing)</option>
+                  </select>
+              </div>
+          </form>
+      `;
+
+      await DialogV2.wait({
+          window: { title: "Rest & Recovery", icon: "fas fa-bed" },
+          content: content,
+          buttons: [{
+              action: "rest",
+              label: "Rest",
+              callback: async (event, button, dialog) => {
+                  const form = new FormDataExtended(dialog.element.querySelector("form")).object;
+                  
+                  let bashingHeal = 0;
+                  let lethalHeal = 0;
+                  const bonus = parseInt(form.care) || 0;
+
+                  // Simple Logic based on PDF guidelines
+                  if (form.time === "hour") {
+                      bashingHeal = 1 + bonus;
+                  } 
+                  else if (form.time === "night") {
+                      bashingHeal = 10; // Clear all
+                  }
+                  else if (form.time === "day") {
+                      bashingHeal = 10;
+                      lethalHeal = 1 + bonus;
+                  }
+                  else if (form.time === "week") {
+                      bashingHeal = 10;
+                      lethalHeal = 2 + bonus; // Simplified "Week" rule
+                  }
+
+                  if (bashingHeal > 0) await actor.recoverHealth("bashing", bashingHeal);
+                  if (lethalHeal > 0) await actor.recoverHealth("lethal", lethalHeal);
+              }
+          }]
+      });
+  }
+
   // --- NEW RELOAD LOGIC ---
   static async _onReloadWeapon(event, target) {
       event.preventDefault();
