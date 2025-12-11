@@ -264,6 +264,7 @@ prepareBaseData() {
    * Heal damage based on time and care quality.
    * @param {string} type "bashing" or "lethal"
    * @param {number} amount Number of levels to heal
+   * @returns {Promise<number>} The number of levels actually healed
    */
   async recoverHealth(type, amount) {
       const system = this.system;
@@ -275,22 +276,13 @@ prepareBaseData() {
       const newLevels = [...levels];
       let healedCount = 0;
 
-      // Healing Logic: Find the worst wound of the specific type and clear it
-      // Standard WoD healing usually pushes wounds "down" (Left), clearing from the Right.
-      // But since we sort wounds (Agg -> Lethal -> Bashing), we effectively heal from the "bottom" up.
-      
       const targetCode = (type === "lethal") ? 2 : 1;
 
-      // We loop as many times as we have 'healing points'
       for (let h = 0; h < amount; h++) {
-          // Find the right-most (least severe) wound of this type or lower
-          // Note: In standard rules, healing Lethal converts it to Bashing? 
-          // Or does it remove it? The PDF implies "Recovery Time", suggesting removal.
-          // Let's assume Removal for simplicity unless you want the conversion rule.
-          
           let foundIndex = -1;
           
           // Find the last occurrence of the specific damage type
+          // (Heals the "lightest" wound of that type first)
           for (let i = newLevels.length - 1; i >= 0; i--) {
               if (newLevels[i] === targetCode) {
                   foundIndex = i;
@@ -302,20 +294,18 @@ prepareBaseData() {
               newLevels[foundIndex] = 0; // Clear the box
               healedCount++;
           } else {
-              break; // No more wounds of this type to heal
+              break; 
           }
       }
 
-      // Re-Sort to keep zeros at the end
+      // Re-Sort to keep wounds packed to the left (Agg > Lethal > Bashing)
       newLevels.sort((a, b) => b - a);
 
       if (healedCount > 0) {
           // Update Actor
           await this.update({ "system.health.levels": newLevels });
           
-          // Remove Statuses if healthy enough
-          // Calculate penalty again to see if we are still Incapacitated
-          // (This logic mirrors prepareDerivedData)
+          // Check if we are healthy enough to remove Incapacitated/Dead statuses
           let penalty = 0;
           for (let i = 6; i >= 0; i--) {
               if (newLevels[i] > 0) { 
@@ -334,9 +324,11 @@ prepareBaseData() {
                   <i class="fas fa-heart"></i> ${this.name} recovered ${healedCount} levels of ${type} damage.
               </div>`
           });
-      } else {
-          ui.notifications.info("No wounds of that type to heal.");
-      }
+      } 
+      
+      // Removed the 'else' block here to prevent notification spam
+      
+      return healedCount;
   }
 
   async rollInitiativeDialog() {
