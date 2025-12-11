@@ -30,7 +30,8 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       toggleEditMode: this._onToggleEditMode,
       spendXP: this._onSpendXP,
       resetXP: this._onResetXP,
-      reloadWeapon: this._onReloadWeapon
+      reloadWeapon: this._onReloadWeapon,
+      recoverHealth: this._onRecoverHealth
     }
   };
 
@@ -543,18 +544,20 @@ static async _onRecoverHealth(event, target) {
               action: "rest",
               label: "Rest",
               callback: async (event, button, dialog) => {
-                  const form = new FormDataExtended(dialog.element.querySelector("form")).object;
+                  const formElement = dialog.element.querySelector("form");
+                  // V13 FIX: proper namespace
+                  const form = new foundry.applications.ux.FormDataExtended(formElement).object;
                   
                   let bashingHeal = 0;
                   let lethalHeal = 0;
                   const bonus = parseInt(form.care) || 0;
 
-                  // Simple Logic based on PDF guidelines
+                  // Healing Logic based on Rules
                   if (form.time === "hour") {
                       bashingHeal = 1 + bonus;
                   } 
                   else if (form.time === "night") {
-                      bashingHeal = 10; // Clear all
+                      bashingHeal = 10; // Clear all Bashing
                   }
                   else if (form.time === "day") {
                       bashingHeal = 10;
@@ -562,7 +565,7 @@ static async _onRecoverHealth(event, target) {
                   }
                   else if (form.time === "week") {
                       bashingHeal = 10;
-                      lethalHeal = 2 + bonus; // Simplified "Week" rule
+                      lethalHeal = 2 + bonus;
                   }
 
                   if (bashingHeal > 0) await actor.recoverHealth("bashing", bashingHeal);
