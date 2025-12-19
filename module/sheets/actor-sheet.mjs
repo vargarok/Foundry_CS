@@ -31,7 +31,9 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       spendXP: this._onSpendXP,
       resetXP: this._onResetXP,
       reloadWeapon: this._onReloadWeapon,
-      recoverHealth: this._onRecoverHealth
+      recoverHealth: this._onRecoverHealth,
+      rollWillpower: this._onRollWillpower,
+      adjustWillpower: this._onAdjustWillpower
     }
   };
 
@@ -183,8 +185,50 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     }
     context.effects = effects;
 
+// --- WILLPOWER PREP ---
+    // 1. Permanent: Always 10 dots (standard max)
+    const wpMax = system.willpower.max || 0;
+    const permDots = [];
+    for (let i = 1; i <= 10; i++) {
+        permDots.push({ val: i, filled: i <= wpMax });
+    }
+
+    // 2. Temporary: The track length equals the current Permanent rating
+    const wpVal = system.willpower.value || 0;
+    const tempDots = [];
+    for (let i = 1; i <= wpMax; i++) {
+        tempDots.push({ val: i, filled: i <= wpVal });
+    }
+
+    context.willpower = {
+        permanent: permDots,
+        temporary: tempDots
+    };
+
     return context;
-}
+  }
+
+  static async _onAdjustWillpower(event, target) {
+      const type = target.dataset.type; // "max" or "value"
+      const val = parseInt(target.dataset.value);
+      
+      // Prevent setting temporary points higher than permanent rating
+      if (type === "value") {
+          const currentMax = this.document.system.willpower.max;
+          if (val > currentMax) return;
+      }
+
+      // If user clicks the exact value they already have, toggle it off (optional QoL)
+      // e.g. clicking the 3rd box when you have 3 unchecks it to 2.
+      const currentVal = foundry.utils.getProperty(this.document.system, `willpower.${type}`);
+      const finalVal = (val === currentVal) ? val - 1 : val;
+
+      await this.document.update({ [`system.willpower.${type}`]: finalVal });
+  }
+
+  static async _onRollWillpower(event, target) {
+      this.document.rollWillpower();
+  }
 
   static async _onToggleEditMode(event, target) {
       const actor = this.document;

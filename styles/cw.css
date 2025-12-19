@@ -139,38 +139,63 @@
     color: var(--cw-accent);
 }
 
-/* Derived Stats & Health */
+/* Derived Stats */
+/* Container for the bottom panels */
 .derived-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     gap: 10px;
     margin-top: 10px;
 }
-.panel {
-    background: var(--cw-panel);
-    padding: 10px;
-    border: 1px solid var(--cw-border);
+
+/* Ensure panels take equal width */
+.derived-row .panel {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.05); /* Slight background to distinguish */
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #aaa;
 }
-.grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
-}
-.health-track {
+
+/* Willpower Specifics */
+.willpower-grid {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 5px;
+    padding: 5px;
 }
-.health-row {
+
+.wp-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 2px;
-    background: rgba(0,0,0,0.2);
+    justify-content: space-between;
 }
-.health-row input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
+
+.wp-row label {
+    font-weight: bold;
+    flex: 0 0 60px; /* Fixed width for labels */
+}
+
+/* The Dots/Squares Track */
+.resource-track {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap; /* Wrap if they exceed width, though 10 usually fits */
+}
+
+.resource-track .pip {
+    cursor: pointer;
+    font-size: 14px;
+    color: #555; /* Empty Color */
+    transition: transform 0.1s;
+}
+
+.resource-track .pip:hover {
+    color: var(--cw-accent);
+    transform: scale(1.2);
+}
+
+.resource-track .pip i.fas {
+    color: var(--cw-accent); /* Filled Color */
 }
 
 /* Skills */

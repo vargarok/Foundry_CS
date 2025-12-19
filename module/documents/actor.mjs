@@ -21,6 +21,29 @@ export class CWActor extends Actor {
       });
     }
   }
+  async rollWillpower() {
+      const rating = this.system.willpower.max || 1;
+      const points = this.system.willpower.value || 0;
+
+      // Standard Roll: Rating d10s vs Difficulty 6
+      const roll = await new Roll(`${rating}d10cs>=6`).evaluate();
+      
+      const content = await foundry.applications.handlebars.renderTemplate("systems/colonial-weather/templates/chat/roll.hbs", {
+          roll,
+          isBotch: (roll.total === 0 && roll.dice[0].results.some(d => d.result === 1)),
+          label: "Willpower Roll",
+          formula: `${rating} Dice (Permanent WP)`,
+          img: "icons/svg/aura.svg", // Or use this.img
+          woundPen: 0 // Willpower ignores wound penalties
+      });
+
+      ChatMessage.create({
+          user: game.user.id,
+          speaker: ChatMessage.getSpeaker({ actor: this }),
+          content,
+          rolls: [roll]
+      });
+  }
 
 prepareBaseData() {
     const system = this.system;

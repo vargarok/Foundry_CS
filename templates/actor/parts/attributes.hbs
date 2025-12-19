@@ -118,5 +118,37 @@
             <div><strong>Sprint:</strong> {{system.derived.moveSprint}} m</div>
         </div>
     </div>
+
+      <div class="panel">
+          <h3>
+              <a data-action="rollWillpower" class="roll-label" title="Roll Permanent Willpower">Willpower</a>
+          </h3>
+          
+          <div class="willpower-grid">
+            {{!-- Permanent Rating --}}
+            <div class="wp-row">
+                <label>Rating</label>
+                <div class="resource-track" title="Permanent Rating (Max 10)">
+                    {{#each willpower.permanent as |pip|}}
+                        <a data-action="adjustWillpower" data-type="max" data-value="{{pip.val}}" class="pip">
+                            {{#if pip.filled}}<i class="fas fa-circle"></i>{{else}}<i class="far fa-circle"></i>{{/if}}
+                        </a>
+                    {{/each}}
+                </div>
+            </div>
+
+            {{!-- Temporary Pool --}}
+            <div class="wp-row">
+                <label>Points</label>
+                <div class="resource-track" title="Current Points">
+                    {{#each willpower.temporary as |pip|}}
+                        <a data-action="adjustWillpower" data-type="value" data-value="{{pip.val}}" class="pip">
+                            {{#if pip.filled}}<i class="fas fa-square"></i>{{else}}<i class="far fa-square"></i>{{/if}}
+                        </a>
+                    {{/each}}
+                </div>
+            </div>
+          </div>
+      </div>
   </div>
 </div>
