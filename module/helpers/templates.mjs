@@ -5,6 +5,7 @@ export const preloadHandlebarsTemplates = async function() {
     "systems/colonial-weather/templates/actor/parts/header.hbs",
     "systems/colonial-weather/templates/actor/parts/attributes.hbs",
     "systems/colonial-weather/templates/actor/parts/skills.hbs",
-    "systems/colonial-weather/templates/actor/parts/bio.hbs"
+    "systems/colonial-weather/templates/actor/parts/bio.hbs",
+    "systems/colonial-weather/templates/parts/active-effects.hbs"
   ]);
 };
