@@ -105,7 +105,24 @@ Hooks.on("renderChatMessageHTML", (message, html, data) => {
     if (damageButton) {
         damageButton.addEventListener("click", async (ev) => {
             ev.preventDefault();
-            ev.stopPropagation(); // Stop event bubbling
+            ev.stopPropagation();
+
+            // --- SECURITY CHECK START ---
+            // 1. Get the Actor associated with this message
+            // message.speaker contains { actor: "id", ... }
+            const speaker = message.speaker;
+            let actor = null;
+            if (speaker.token) actor = game.actors.tokens[speaker.token];
+            if (!actor) actor = game.actors.get(speaker.actor);
+
+            // 2. Check Permissions
+            // Allow if user is GM OR user is the Owner of the actor who attacked
+            if (!game.user.isGM && (!actor || !actor.isOwner)) {
+                ui.notifications.warn("You do not have permission to resolve this damage.");
+                return;
+            }
+            // --- SECURITY CHECK END ---
+
             const button = ev.currentTarget;
             
             // 1. Get Button Data
