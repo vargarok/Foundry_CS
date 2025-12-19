@@ -54,10 +54,9 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const system = this.document.system;
-    const source = this.document.toObject().system; // Raw DB data
+    const source = this.document.toObject().system; 
 
-    // --- NEW: Pre-calculate Attributes for Display ---
-    // This replaces the complex template logic and fixes the "0" bug
+    // --- 1. Attributes Calculation ---
     const attributes = {};
     const groups = {
         physical: CONFIG.CW.attributes.physical,
@@ -65,10 +64,9 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         mental: CONFIG.CW.attributes.mental
     };
 
-    // Helper to build the display object
     const buildAttr = (key) => {
         const base = source.attributes[key].value;
-        const eff = system.derived.attributes[key]; // Calculated in Actor.mjs
+        const eff = system.derived.attributes[key]; 
         return {
             key: key,
             label: system.attributes[key].label,
@@ -79,20 +77,19 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
         };
     };
 
-    // Build lists for the template
     context.viewAttributes = {
         physical: groups.physical.map(buildAttr),
         social: groups.social.map(buildAttr),
         mental: groups.mental.map(buildAttr)
     };
 
-    // 2. Prepare basic Actor data
+    // --- 2. Basic Data ---
     context.actor = this.document;
     context.activeTab = this.tabGroups.sheet;
     context.config = CONFIG.CW;
     context.system = system;
     
-    // 3. Dropdown Options for Attributes
+    // --- 3. Dropdown Options ---
     context.attrOptions = CONFIG.CW.attributes.physical
         .concat(CONFIG.CW.attributes.social)
         .concat(CONFIG.CW.attributes.mental)
@@ -101,43 +98,39 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
             return acc;
         }, {});
 
-    // 4. Health Config (Updated for Top-Loading Bonus Levels)
+    // --- 4. Health Config (FIXED FOR OBJECT STRUCTURE) ---
     const healthLevels = system.health.levels || [];
     const bonusLevels = system.health.bonusLevels || 0;
-    const standardConfig = CONFIG.CW.healthLevels;
+    const standardConfig = CONFIG.CW.healthLevels; // Now an Object
     
-    const damageClasses = {
-        0: "", 1: "bashing", 2: "lethal", 3: "aggravated"
-    };
-    // UPDATED: Icons to Letters
-    const damageIcons = {
-        0: "", 1: "B", 2: "L", 3: "A"
-    };
+    const damageClasses = { 0: "", 1: "bashing", 2: "lethal", 3: "aggravated" };
+    const damageIcons = { 0: "", 1: "B", 2: "L", 3: "A" };
 
-    // A. Generate Standard Levels (Indices 0 to 6)
-    const standardList = standardConfig.map((l, i) => {
+    // A. Generate Standard Levels (Convert Object values to Array)
+    const standardList = Object.values(standardConfig).map((l, i) => {
         const state = healthLevels[i] || 0;
         return {
             label: l.label,
             penalty: l.penalty,
-            index: i, // Matches system.health.levels[0-6]
+            index: i, 
             state: state,
             cssClass: damageClasses[state],
             icon: damageIcons[state]
         };
     });
 
-    // B. Generate Bonus Levels (Indices 7+)
-    // These will be "Bruised" levels with 0 penalty
+    // B. Generate Bonus Levels
     const bonusList = [];
+    const standardCount = Object.keys(standardConfig).length; // Fix: .length doesn't exist on Objects
+
     for (let i = 0; i < bonusLevels; i++) {
-        const dataIndex = standardConfig.length + i; // Starts at 7
+        const dataIndex = standardCount + i; 
         const state = healthLevels[dataIndex] || 0;
         
         bonusList.push({
-            label: "Bruised", // Clean label
+            label: "Bruised", 
             penalty: 0,
-            index: dataIndex, // Matches system.health.levels[7+]
+            index: dataIndex,
             state: state,
             cssClass: damageClasses[state],
             icon: damageIcons[state]
@@ -147,29 +140,19 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
     // C. Combine: Bonus First, then Standard
     context.healthConfig = [...bonusList, ...standardList];
 
-    // 5. Prepare Inventory (Categorize Items)
-    const inventory = {
-      weapons: [],
-      armor: [],
-      gear: [],
-      cybernetics: [],
-      traits: [],
-      backgrounds: []
-    };
-
-    // Loop through all items on the actor and sort them
+    // --- 5. Inventory ---
+    const inventory = { weapons: [], armor: [], gear: [], cybernetics: [], traits: [], backgrounds: [] };
     for (const i of this.document.items) {
       if (i.type === "weapon") inventory.weapons.push(i);
       else if (i.type === "armor") inventory.armor.push(i);
       else if (i.type === "cybernetic") inventory.cybernetics.push(i);
       else if (i.type === "trait") inventory.traits.push(i);
       else if (i.type === "background") inventory.backgrounds.push(i);
-      else inventory.gear.push(i); // Fallback for any other type
+      else inventory.gear.push(i); 
     }
-    
     context.inventory = inventory;
 
-    // 6. Define Tabs (Included Inventory directly here to avoid the error)
+    // --- 6. Tabs ---
     context.tabs = [
       { id: "attributes", group: "sheet", icon: "fa-solid fa-user", label: "Attributes" },
       { id: "combat", group: "sheet", icon: "fa-solid fa-heart-pulse", label: "Combat" },
@@ -180,43 +163,28 @@ export class CWActorSheet extends HandlebarsApplicationMixin(ActorSheetV2) {
       { id: "bio", group: "sheet", icon: "fa-solid fa-book", label: "Bio" }
     ];
 
-    // 7. Prepare Active Effects (Aggregated from Actor AND Items)
+    // --- 7. Effects ---
     const effects = [];
-
-    // A. Direct Actor Effects (Temporary buffs, debuffs, or manual adds)
     for (const e of this.document.effects) {
         effects.push({
-            id: e.id,
-            name: e.name,
-            img: e.img,
-            disabled: e.disabled,
-            sourceName: "Actor (Temporary)",
-            isItemEffect: false // Flag to know we can edit/delete directly
+            id: e.id, name: e.name, img: e.img, disabled: e.disabled,
+            sourceName: "Actor (Temporary)", isItemEffect: false 
         });
     }
-
-    // B. Transfer Effects from Items (Equipment, Merits, Cybernetics)
     for (const item of this.document.items) {
         for (const e of item.effects) {
-            // Only show effects that are intended to transfer (Passive Buffs)
             if (e.transfer) {
                 effects.push({
-                    id: e.id,
-                    name: e.name,
-                    img: e.img,
-                    disabled: e.disabled,
-                    sourceName: item.name,
-                    isItemEffect: true, // Flag to disable direct delete (must edit item)
-                    itemId: item.id     // Link back to item
+                    id: e.id, name: e.name, img: e.img, disabled: e.disabled,
+                    sourceName: item.name, isItemEffect: true, itemId: item.id
                 });
             }
         }
     }
-    
     context.effects = effects;
 
     return context;
-  }
+}
 
   static async _onToggleEditMode(event, target) {
       const actor = this.document;
