@@ -33,8 +33,13 @@ prepareBaseData() {
     }
   }
 
+get woundPenalty() {
+    return this.system.health.penalty || 0;
+}
+
   prepareDerivedData() {
     const system = this.system;
+    
 
     // XP Calculation
     const total = system.experience.total || 0;
@@ -106,16 +111,26 @@ prepareBaseData() {
 
     // --- 7. Health Penalties ---
     let penalty = 0;
+    let label = "Healthy";
+
+    // Ensure levels exist
     if (!system.health.levels) system.health.levels = [0,0,0,0,0,0,0];
     const levels = system.health.levels;
-    
+
+    // Loop backwards to find the highest filled box
+    // (0=Bruised ... 6=Incapacitated)
     for (let i = 6; i >= 0; i--) {
-      if (levels[i] > 0) { 
-        penalty = CONFIG.CW.healthLevels[i].penalty;
+    // If the box has damage (1=Bashing, 2=Lethal, 3=Aggravated), apply this level's penalty
+    if (levels[i] > 0) { 
+        const levelData = CONFIG.CW.healthLevels[i];
+        penalty = levelData.penalty;
+        label = levelData.label;
         break; 
-      }
     }
+    }
+
     system.health.penalty = penalty;
+    system.health.statusLabel = label; // Useful for displaying "Mauled" on the sheet
 
     // --- 8. Calculate Armor Soak per Location ---
     if (system.health.locations) {
@@ -366,7 +381,7 @@ getCombatant() {
     }
 
     let pool = attrVal + skillVal + bonus;
-    const woundPen = system.health.penalty;
+    const woundPen = this.woundPenalty;
     
     // --- Formula Generation for Chat ---
     let formula = `${CONFIG.CW.attributeLabels[attributeKey] || attributeKey.toUpperCase()}`;
@@ -375,21 +390,19 @@ getCombatant() {
     if (woundPen !== 0) formula += ` - ${Math.abs(woundPen)} (Pain)`;
     // -----------------------------------
 
-    if (woundPen === 99) {
-       pool = 0;
-    } else {
-       pool += woundPen;
+    // Check for Incapacitation
+    if (woundPen <= -99) {
+       ui.notifications.warn(`${this.name} is Incapacitated and cannot act!`);
+       return; // Stop the roll
     }
 
-    if (system.development.isCreation) {
-        this._calculateCreationPoints(system);
-    }
-
-    pool = Math.max(0, pool);
-    
-    if (pool === 0) {
-        ChatMessage.create({ content: `<strong>${this.name}</strong> cannot act (Dice pool 0 or Incapacitated).` });
-        return;
+    // Apply Penalty (Subtracting the absolute value)
+    // We check if (woundPen !== 0) to avoid printing "-0"
+    if (woundPen !== 0) {
+        pool += woundPen; // woundPen is negative (e.g., -2), so we add it
+        
+        // Update the formula string for the chat message
+        formula += ` - ${Math.abs(woundPen)} (Wounds)`;
     }
 
     const rollExpression = isSpecialized ? `${pool}d10x10cs>=7` : `${pool}d10cs>=7`;
